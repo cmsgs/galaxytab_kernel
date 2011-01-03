@@ -1,0 +1,56 @@
+
+#####################
+# /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root
+# Last modified: 1288760194.0000000000
+
+dir /sbin 755 0 0
+file /sbin/redbend_ua /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/sbin/redbend_ua 755 0 0
+file /sbin/adbd /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/sbin/adbd 755 0 0
+file /init.rc /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/init.rc 555 0 0
+file /lpm.rc /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lpm.rc 555 0 0
+dir /modules 755 0 0
+file /modules/s3c_lcd.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/modules/s3c_lcd.ko 444 0 0
+file /modules/pvrsrvkm.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/modules/pvrsrvkm.ko 444 0 0
+file /modules/s3c_bc.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/modules/s3c_bc.ko 444 0 0
+file /default.prop /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/default.prop 644 0 0
+dir /lib 755 0 0
+dir /lib/modules 755 0 0
+file /lib/modules/j4fs.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/j4fs.ko 644 0 0
+file /lib/modules/param.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/param.ko 644 0 0
+file /lib/modules/bthid.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/bthid.ko 644 0 0
+file /lib/modules/vibrator.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/vibrator.ko 644 0 0
+file /lib/modules/storage.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/storage.ko 644 0 0
+file /lib/modules/dhd.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/dhd.ko 644 0 0
+file /lib/modules/onedram.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/onedram.ko 644 0 0
+file /lib/modules/modemctl.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/modemctl.ko 644 0 0
+file /lib/modules/svnet.ko /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/lib/modules/svnet.ko 644 0 0
+file /init.smdkc110.rc /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/init.smdkc110.rc 555 0 0
+dir /system 755 0 0
+file /init.goldfish.rc /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/init.goldfish.rc 444 0 0
+file /fota.rc /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/fota.rc 555 0 0
+dir /sys 755 0 0
+file /recovery.rc /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/recovery.rc 555 0 0
+dir /res 755 0 0
+dir /res/images 755 0 0
+file /res/images/indeterminate3.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/indeterminate3.png 444 0 0
+file /res/images/progress_bar_left_round.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_bar_left_round.png 555 0 0
+file /res/images/progress_bar_empty_right_round.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_bar_empty_right_round.png 555 0 0
+file /res/images/icon_installing.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/icon_installing.png 555 0 0
+file /res/images/progress_bar_right_round.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_bar_right_round.png 555 0 0
+file /res/images/icon_error.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/icon_error.png 555 0 0
+file /res/images/progress_empty.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_empty.png 444 0 0
+file /res/images/indeterminate2.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/indeterminate2.png 444 0 0
+file /res/images/progress_bar_empty_left_round.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_bar_empty_left_round.png 555 0 0
+file /res/images/progress_bar_fill.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_bar_fill.png 555 0 0
+file /res/images/indeterminate4.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/indeterminate4.png 444 0 0
+file /res/images/indeterminate6.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/indeterminate6.png 444 0 0
+file /res/images/icon_firmware_error.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/icon_firmware_error.png 555 0 0
+file /res/images/progress_bar_empty.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_bar_empty.png 555 0 0
+file /res/images/icon_firmware_install.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/icon_firmware_install.png 555 0 0
+file /res/images/progress_fill.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/progress_fill.png 444 0 0
+file /res/images/indeterminate1.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/indeterminate1.png 444 0 0
+file /res/images/indeterminate5.png /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/res/images/indeterminate5.png 444 0 0
+file /init /data/P1/P1_Froyo_Prod/SECSYS/C110/publish/Android/out/target/product/GT-P1000/root/init 755 0 0
+dir /dev 755 0 0
+dir /proc 755 0 0
+dir /data 755 0 0
