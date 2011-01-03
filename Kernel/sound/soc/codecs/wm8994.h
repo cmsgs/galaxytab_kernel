@@ -31,6 +31,8 @@ extern struct snd_soc_codec_device soc_codec_dev_wm8994;
 
 extern struct snd_soc_dai wm8994_dai;
 
+#define FEATURE_VSUITE_RECOGNITION //GNUX@2010.10.01 : Add for VSuite
+
 #define WM8994_SYSCLK_MCLK     1
 #define WM8994_SYSCLK_FLL      2
 
@@ -70,7 +72,10 @@ enum call_recording_channel {CH_OFF, CH_UPLINK, CH_DOWNLINK, CH_UDLINK};
 #define CMD_RECOGNITION_ACTIVE		5	// Distingush recognition gain. To use MIC gain for recognition.
 #define CMD_CALL_FLAG_CLEAR		6	// Call flag clear for shutdown - to reduce pop up noise.
 #define CMD_CALL_END			7	// Codec off in call mode - to reduce pop up noise.
-
+#ifdef FEATURE_VSUITE_RECOGNITION
+#define CMD_VSUITE_RECOGNITION_DEACTIVE	8	// Distingush vsuite recognition gain. To use default MIC gain.
+#define CMD_VSUITE_RECOGNITION_ACTIVE	9	// Distingush vsuite recognition gain. To use MIC gain for recognition.
+#endif
 
 #define HPAMP_OFF 0x00
 #define HPAMP_PLAYBACK 0x01
@@ -106,11 +111,17 @@ struct wm8994_priv {
 	enum fmradio_mix_path fmr_mix_path;
 	enum power_state power_state;
 	enum state recognition_active;		// for control gain to voice recognition.
+#ifdef FEATURE_VSUITE_RECOGNITION
+	enum state vsuite_recognition_active;		// for control gain to vsuite voice recognition.
+#endif
 	enum state ringtone_active;
 	enum voice_record_path call_record_path;
 	enum call_recording_channel call_record_ch;
 	select_route *universal_playback_path;
 	select_route *universal_voicecall_path;
+#ifdef CONFIG_TARGET_LOCALE_KOR
+	select_route *universal_voipcall_path;
+#endif
 	select_mic_route *universal_mic_path;
 	int testmode_config_flag;	// for testmode.
 };
@@ -163,6 +174,13 @@ void wm8994_set_fmradio_speaker(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_headset_mix(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_speaker_mix(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_speaker_headset_mix(struct snd_soc_codec *codec);
+#ifdef CONFIG_TARGET_LOCALE_KOR
+void wm8994_set_voipcall_receiver(struct snd_soc_codec *codec);
+void wm8994_set_voipcall_headphone(struct snd_soc_codec *codec);
+void wm8994_set_voipcall_headset(struct snd_soc_codec *codec);
+void wm8994_set_voipcall_speaker(struct snd_soc_codec *codec);
+void wm8994_set_voipcall_bluetooth(struct snd_soc_codec *codec);
+#endif
 #if defined WM8994_REGISTER_DUMP
 void wm8994_register_dump(struct snd_soc_codec *codec);
 #endif

@@ -377,7 +377,7 @@ void sdhci_s3c_force_presence_change(struct platform_device *pdev)
 	struct sdhci_host *host = platform_get_drvdata(pdev);
 
 	printk(KERN_DEBUG "%s : Enter\n",__FUNCTION__);
-#if defined(CONFIG_TARGET_LOCALE_EUR) || defined(CONFIG_TARGET_LOCALE_KOR) || defined(CONFIG_TARGET_LOCALE_USAGSM)
+#if defined(CONFIG_TARGET_LOCALE_EUR) || defined(CONFIG_TARGET_LOCALE_KOR)
 	mmc_detect_change(host->mmc, 0);
 #else
 	mmc_detect_change(host->mmc, msecs_to_jiffies(200));

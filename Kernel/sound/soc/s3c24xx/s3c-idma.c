@@ -283,13 +283,6 @@ static int s3c_idma_trigger(struct snd_pcm_substream *substream, int cmd)
 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
 		prtd->state &= ~ST_RUNNING;
 		s3c_idma_ctrl(LPAM_DMA_STOP);
-
-#if 1 //GNUX@2010.09.20 : avoid headset pop-up noise
-		if(get_headset_status())
-		{
-			memset(substream->runtime->dma_area, 0, LP_BUFSIZE); 
-		}
-#endif
 		break;
 
 	default:

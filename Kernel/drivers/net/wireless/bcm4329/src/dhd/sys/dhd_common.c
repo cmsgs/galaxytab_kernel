@@ -1226,6 +1226,50 @@ dhd_arp_offload_enable(dhd_pub_t * dhd, int arp_enable)
 		__FUNCTION__, arp_enable));
 }
 
+#define USE_KEEP_ALIVE
+
+#ifdef USE_KEEP_ALIVE
+int
+dhd_enable_keepalive(dhd_pub_t *dhd, uint32 period)
+{
+	int						buf_len;
+	int						str_len = 10;
+	char                    buf[256];
+	
+	wl_keep_alive_pkt_t	keep_alive_pkt;
+	wl_keep_alive_pkt_t	*pkt;
+
+	memset(buf, 0, sizeof(buf));
+	
+	memcpy(buf, "keep_alive", str_len);
+	buf[str_len] = 0;
+
+	pkt = (wl_keep_alive_pkt_t *) (buf + str_len + 1);
+	keep_alive_pkt.period_msec = htod32(period);
+	buf_len = str_len + 1;
+
+	if (0 == period) {
+		keep_alive_pkt.len_bytes = 0;
+		buf_len += sizeof(wl_keep_alive_pkt_t);
+		DHD_TRACE(("Disable Keep Alive\n"));
+	}
+	else {
+		/* destination address */
+		keep_alive_pkt.len_bytes = 2;
+		buf_len += (WL_KEEP_ALIVE_FIXED_LEN + keep_alive_pkt.len_bytes);
+		DHD_TRACE(("Enable Keep Alive\n"));
+	}
+
+	/* Keep-alive attributes are set in local	variable (keep_alive_pkt), and
+	 * then memcpy'ed into buffer (pkt) since there is no
+	 * guarantee that the buffer is properly aligned.
+	 */
+	memcpy((char *)pkt, &keep_alive_pkt, WL_KEEP_ALIVE_FIXED_LEN);
+
+	return dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, buf, buf_len);
+}
+#endif /* USE_KEEP_ALIVE */
+
 int
 dhd_preinit_ioctls(dhd_pub_t *dhd)
 {
@@ -1451,6 +1495,12 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 		}
 	}
 #endif /* PKT_FILTER_SUPPORT */
+
+#ifdef USE_KEEP_ALIVE
+	printf("DHD Enable Keep Alive : 60 sec");
+	dhd_enable_keepalive(dhd, 60000);
+#endif
+
 
 	return 0;
 }

@@ -157,9 +157,22 @@ static ssize_t acc_check_read(struct device *dev, struct device_attribute *attr,
 		else if(CONNECTED_ACC == ACC_LINEOUT)
 			connected |= (0x1<<4);
 	}
-	if(gpio_get_value(GPIO_HDMI_HPD))
-		connected |= (0x1<<5);
-
+#if defined (CONFIG_TARGET_LOCALE_KOR)
+//HW rev09 hpd is pull up by vcc1.8PDA   
+	if(HWREV > 11 ) 
+	{
+		if(gpio_get_value(GPIO_HDMI_HPD))
+			connected |= (0x1<<5);
+	}
+#else
+//#if defined (CONFIG_TARGET_LOCALE_EUR)
+//	if(HWREV > 0xC ) //rev0.7 is 0xD
+//	{
+		if(gpio_get_value(GPIO_HDMI_HPD)&& MHD_HW_IsOn())
+			connected |= (0x1<<5);
+//	}
+//#endif	
+#endif
 	//connected = ((DOCK_STATE<<0)|(CONNECTED_DOCK<<4)|(ACC_STATE<<8)|(CONNECTED_ACC<<12));
 	count = sprintf(buf,"%d\n", connected );
 	ACC_CONDEV_DBG("%x",connected);

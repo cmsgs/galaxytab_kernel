@@ -78,6 +78,10 @@ static DEFINE_MUTEX(ashmem_mutex);
 static struct kmem_cache *ashmem_area_cachep __read_mostly;
 static struct kmem_cache *ashmem_range_cachep __read_mostly;
 
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+extern int kernel_sec_check_debug_level_high(void);
+#endif
+
 #define range_size(range) \
   ((range)->pgend - (range)->pgstart + 1)
 
@@ -342,12 +346,32 @@ static int set_name(struct ashmem_area *asma, void __user *name)
 	/* cannot change an existing mapping's name */
 	if (unlikely(asma->file)) {
 		ret = -EINVAL;
+#ifdef CONFIG_TARGET_LOCALE_KOR 
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+		printk(KERN_ERR "[DBG] ashmem: failed in set_name()\n");
+		printk(KERN_ERR "[DBG] ashmem: asma->file = %x\n",asma->file);
+		printk(KERN_ERR "[DBG] ashmem: asma->name = %s\n",asma->name);
+		if(kernel_sec_check_debug_level_high()==1)
+            BUG();
+#endif
+#endif
 		goto out;
 	}
 
 	if (unlikely(copy_from_user(asma->name + ASHMEM_NAME_PREFIX_LEN,
 				    name, ASHMEM_NAME_LEN)))
+    {
 		ret = -EFAULT;
+#ifdef CONFIG_TARGET_LOCALE_KOR 
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+		printk(KERN_ERR "[DBG] ashmem: failed in set_name()\n");
+		printk(KERN_ERR "[DBG] ashmem: asma->file = %x\n",asma->file);
+		printk(KERN_ERR "[DBG] ashmem: asma->name = %s\n",asma->name);
+		if(kernel_sec_check_debug_level_high()==1)
+            BUG();
+#endif
+#endif
+    }
 	asma->name[ASHMEM_FULL_NAME_LEN-1] = '\0';
 
 out:
@@ -573,6 +597,18 @@ static long ashmem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			ret = 0;
 			asma->size = (size_t) arg;
 		}
+		else
+		{
+#ifdef CONFIG_TARGET_LOCALE_KOR 
+#ifdef CONFIG_KERNEL_DEBUG_SEC
+    		printk(KERN_ERR "[DBG] ashmem: failed in ASHMEM_SET_SIZE\n");
+    		printk(KERN_ERR "[DBG] ashmem: asma->file = %x\n",asma->file);
+    		printk(KERN_ERR "[DBG] ashmem: asma->name = %s\n",asma->name);
+    		if(kernel_sec_check_debug_level_high()==1)
+                BUG();
+#endif
+#endif
+        }
 		break;
 	case ASHMEM_GET_SIZE:
 		ret = asma->size;

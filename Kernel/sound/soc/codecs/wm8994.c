@@ -128,8 +128,9 @@ static const char *codec_tuning_control[] = {"OFF", "ON"};
 static const char *codec_status_control[] = {"FMR_VOL_0", "FMR_VOL_1", "FMR_OFF", "REC_OFF", "REC_ON"};
 static const char * voice_record_path[] = {"CALL_RECORDING_OFF", "CALL_RECORDING_MAIN", "CALL_RECORDING_SUB"};
 static const char * call_recording_channel[] ={"CH_OFF"," CH_UPLINK","CH_DOWNLINK","CH_UDLINK"};
-
-
+#ifdef CONFIG_TARGET_LOCALE_KOR
+static const char *voipcall_path[] = { "OFF", "RCV", "SPK", "HP3P", "HP4P", "BT", };
+#endif
 //------------------------------------------------
 // Definitions of sound path
 //------------------------------------------------
@@ -157,6 +158,18 @@ select_route universal_wm8994_voicecall_paths[] =
 	wm8994_set_voicecall_headset, 
 	wm8994_set_voicecall_bluetooth
 }; 
+
+#ifdef CONFIG_TARGET_LOCALE_KOR
+select_route universal_wm8994_voipcall_paths[] = 
+{
+	wm8994_set_off, 
+	wm8994_set_voipcall_receiver, 
+	wm8994_set_voipcall_speaker, 
+	wm8994_set_voipcall_headphone,
+	wm8994_set_voipcall_headset, 
+	wm8994_set_voipcall_bluetooth
+}; 
+#endif
 
 select_mic_route universal_wm8994_mic_paths[] = 
 {
@@ -737,6 +750,19 @@ static int wm8994_set_codec_status(struct snd_kcontrol *kcontrol,
 			wm8994_shutdown(&tempstream, codec_dai);
 			break;
 
+#ifdef FEATURE_VSUITE_RECOGNITION
+		// For vsuite voice recognition.
+		case CMD_VSUITE_RECOGNITION_DEACTIVE :
+			DEBUG_LOG("VSuite recognition Gain is deactivated!!");
+			wm8994->vsuite_recognition_active = REC_OFF;
+			break;
+
+		case CMD_VSUITE_RECOGNITION_ACTIVE :
+			DEBUG_LOG("VSuite recognition Gain is activated!!");
+			wm8994->vsuite_recognition_active = REC_ON;
+			break;
+#endif
+
 		default :
 			break;
 	}
@@ -824,6 +850,80 @@ static int wm8994_set_voice_call_recording(struct snd_kcontrol *kcontrol,
 	
 }
 
+#ifdef CONFIG_TARGET_LOCALE_KOR
+static int wm8994_get_voip_call_path(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+#if 0
+	DEBUG_LOG("");
+
+	while(playback_path[i] != NULL) {
+		if(!strcmp(playback_path[i], kcontrol->id.name) && ((wm8994_path >> 4) == i)) {
+			ucontrol->value.integer.value[0] = wm8994_path & 0xf;
+			break;
+		}
+		i++;
+	}
+#endif
+	return 0;
+}
+
+static int wm8994_set_voip_call_path(struct snd_kcontrol *kcontrol,
+        struct snd_ctl_elem_value *ucontrol)
+{
+    struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	struct wm8994_priv *wm8994 = codec->private_data;	
+	struct soc_enum *mc =
+		(struct soc_enum *)kcontrol->private_value;
+
+	// Get path value
+	int path_num = ucontrol->value.integer.value[0];	
+	
+	if(strcmp( mc->texts[path_num], voipcall_path[path_num]) )
+	{		
+		DEBUG_LOG_ERR("Unknown path %s\n", mc->texts[path_num] );
+		return -ENODEV;
+	}
+	
+	switch(path_num)
+	{
+		case PLAYBACK_OFF :
+			DEBUG_LOG("Switching off output path\n");
+			break;
+			
+		case SPK :
+		case RCV :
+		case HP3P:	
+		case HP4P:	
+		case BT :
+			DEBUG_LOG("routing  voice path to  %s \n", mc->texts[path_num] );
+			break;
+		
+		default:
+			DEBUG_LOG_ERR("The audio path[%d] does not exists!! \n", path_num);
+			return -ENODEV;
+			break;
+	}
+
+	if(wm8994->cur_path != path_num || !(wm8994->codec_state & CALL_ACTIVE))
+	{
+		wm8994->codec_state |= CALL_ACTIVE;
+		wm8994->cur_path = path_num;
+		wm8994->universal_voipcall_path[wm8994->cur_path](codec);
+	}
+	else
+	{
+		int val;
+		
+		val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+		val &= ~(WM8994_AIF1DAC1_MUTE_MASK);
+		val |= (WM8994_AIF1DAC1_UNMUTE);
+		wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+	}
+
+	return 0;
+}
+#endif
 
 
 void wm8994_set_off(struct snd_soc_codec *codec)
@@ -905,7 +1005,9 @@ static const struct soc_enum path_control_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(codec_status_control), codec_status_control), 
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(voice_record_path), voice_record_path), 
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(call_recording_channel), call_recording_channel), 
-
+#ifdef CONFIG_TARGET_LOCALE_KOR
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(voipcall_path), voipcall_path), 
+#endif
 };
 
 
@@ -943,6 +1045,11 @@ static const struct snd_kcontrol_new wm8994_snd_controls[] = {
 
 	SOC_ENUM_EXT("Recording Channel", path_control_enum[7],
                 wm8994_get_voice_recording_ch, wm8994_set_voice_recording_ch),
+
+#ifdef CONFIG_TARGET_LOCALE_KOR
+	SOC_ENUM_EXT("VoIP Call Path", path_control_enum[8],
+                wm8994_get_voip_call_path, wm8994_set_voip_call_path),
+#endif
 
 #if defined USE_INFINIEON_EC_FOR_VT	
 	SOC_ENUM_EXT("Clock Control", clock_control_enum[0],
@@ -1812,6 +1919,9 @@ static int wm8994_init(struct wm8994_priv *wm8994_private)
 	codec->num_dai = 1;//ARRAY_SIZE(wm8994_dai);
 	wm8994->universal_playback_path = universal_wm8994_playback_paths;
 	wm8994->universal_voicecall_path = universal_wm8994_voicecall_paths;
+#ifdef CONFIG_TARGET_LOCALE_KOR
+	wm8994->universal_voipcall_path = universal_wm8994_voipcall_paths;
+#endif
 	wm8994->universal_mic_path = universal_wm8994_mic_paths;
 	wm8994->stream_state = PCM_STREAM_DEACTIVE;
 	wm8994->cur_path = PLAYBACK_OFF;
@@ -1821,6 +1931,9 @@ static int wm8994_init(struct wm8994_priv *wm8994_private)
 	wm8994->testmode_config_flag = SEC_NORMAL;
 	wm8994->power_state = CODEC_OFF;
 	wm8994->recognition_active = REC_OFF;
+#ifdef FEATURE_VSUITE_RECOGNITION	
+	wm8994->vsuite_recognition_active = REC_OFF;
+#endif
 	wm8994->ringtone_active = OFF;
 
 	wm8994_write(codec,WM8994_SOFTWARE_RESET, 0x0000);

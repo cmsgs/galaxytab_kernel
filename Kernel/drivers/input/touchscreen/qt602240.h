@@ -9,7 +9,7 @@
 #include <linux/earlysuspend.h>
 
 //#define MDNIE_TUNING
-#define CAMERA_FLASH_CONTROL
+//#define CAMERA_FLASH_CONTROL
 #define KEY_LED_CONTROL
 #define ENABLE_NOISE_TEST_MODE
 #define DRIVER_FILTER

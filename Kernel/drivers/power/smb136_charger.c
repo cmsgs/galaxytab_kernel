@@ -110,6 +110,9 @@ u32 smb136_is_fullcharging(void)
 	smb136_i2c_read(smb136_i2c_client, 0x36, &data);		
 	printk("SMB136 addr : 0x36 data : 0x%02x\n",data);
 
+	if ((data & 0x08) == 0x08) // if error bit check, ignore the status of charger-ic
+  		return 0;
+
 	if(data & 0x40)	// Charge current < Termination Current
 		return 1;
 	else
@@ -122,6 +125,9 @@ u32 smb136_is_already_fullcharged(void)
 	u8 data=0;
 	smb136_i2c_read(smb136_i2c_client, 0x36, &data);		
 	printk("SMB136 addr : 0x36 data : 0x%02x\n",data);
+
+	if ((data & 0x08) == 0x08) // if error bit check, ignore the status of charger-ic
+  		return 0;
 
 	if((data & 0xc0) == 0xc0)	// At least one charge cycle terminated, Charge current < Termination Current
 		return 1;

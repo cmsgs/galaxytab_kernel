@@ -1455,6 +1455,15 @@ int __init s5p_tv_init(void)
 		return -1;
 #endif	
 
+// Rev09, After LCD-OFF, System cannot response.
+#if defined (CONFIG_TARGET_LOCALE_KOR)
+	if(HWREV < 12 ) 
+	{
+		printk( "%s,%d : (HWREV=%d)<12 -> return -1", __FILE__, __LINE__, HWREV );
+		return -1;
+	}
+#endif 
+
 	printk(banner);
 
 	//Set_MAX8998_PM_REG(ELDO3, 1);    //HDMI power on temp code 20100614 kyungrok

@@ -39,7 +39,11 @@ void enter_upload_mode(void)
 {
     bool uploadmode = true;
     int i;
-    
+
+    // not to enter forced upload mode in boot PARAM_LOW
+	if( KERNEL_SEC_DEBUG_LEVEL_LOW == kernel_sec_get_debug_level() )
+	    return;        
+
     for (i = 0; i < g_pdata->nbuttons; i++)
     {
         struct gpio_keys_button *button = &g_pdata->buttons[i];
@@ -49,7 +53,7 @@ void enter_upload_mode(void)
             break;
         }
     }
-    
+
     if(uploadmode)
     {
         if (kernel_sec_viraddr_wdt_reset_reg)

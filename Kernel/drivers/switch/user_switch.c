@@ -527,7 +527,7 @@ static int UsbMenuSelStore(int sel)
 		sec_set_param_value(__SWITCH_SEL, &switch_sel);
 
 
-	printk("\n[WJ] %s, %s, switch_sel=%d\n", __FILE__, __FUNCTION__, switch_sel);
+	dmsg("switch_sel= 0x%x\n", switch_sel);
 
 	// returns current USB Mode setting...
 	ret = switch_sel;
@@ -860,7 +860,7 @@ static void connectivity_switching_init(struct work_struct *ignored)
 	int lpm_mode_check = charging_mode_get();
 	switch_sel = 0;
 
-	dmsg("\n");
+	dmsg("called\n");
 
 	if (sec_get_param_value) {
 		sec_get_param_value(__SWITCH_SEL, &switch_sel);
@@ -886,7 +886,7 @@ static void connectivity_switching_init(struct work_struct *ignored)
 #endif
 	askon_sel = (switch_sel & (int)(USB_ASKON_MASK)) >> 6;
 
-	printk("\n[WJ] %s, %s, switch_sel=%d\n", __FILE__, __FUNCTION__, switch_sel);
+	dmsg("switch_sel= 0x%x\n", switch_sel);
 
 	if( samsung_kies_sel )	currentusbstatus = USBSTATUS_SAMSUNG_KIES;
 	else if(ums_sel) 		currentusbstatus = USBSTATUS_UMS;
@@ -935,8 +935,8 @@ static void connectivity_switching_init(struct work_struct *ignored)
 
 	if((switch_sel == 1) || (factoryresetstatus == 0xAE)) {
 		usb_switch_select(USBSTATUS_SAMSUNG_KIES);
-		mtp_mode_on = 1;
-		ap_usb_power_on(0);
+		mtp_mode_on = 0;
+//		ap_usb_power_on(0);
 		UsbMenuSelStore(0);	
 	}
 	else {
@@ -979,7 +979,12 @@ static void connectivity_switching_init(struct work_struct *ignored)
 	}
     else {
 		s3c_usb_cable(1);
-        indicator_dev.state = 1;
+		dmsg("askon_sel : %d\n", askon_sel);
+
+		if(askon_sel)
+			indicator_dev.state = 0;
+		else
+			indicator_dev.state = 1;
     }
 
 	dmsg("switch_sel : 0x%x\n", switch_sel);

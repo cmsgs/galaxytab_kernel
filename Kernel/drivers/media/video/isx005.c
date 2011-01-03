@@ -62,10 +62,10 @@ static int gLowLight = 0;
 static int gLowLight_flash = 0;
 static int gLowLight_flash_second = 0;
 static int gCurrentScene = SCENE_MODE_NONE;
-static int gIsoCondition = 0; //kidggang - About techwin temp test binay
+static int gIsoCondition = 0; //About techwin
 static int flash_mode = 1; //default is FLASH OFF
 static int flash_check = 0; //default is FLASH OFF - Auto on/off
-static int preview_ratio = 16;//zzangdol
+static int preview_ratio = 16;
 static int g_ctrl_entered = 0;
 static int first_af_start = 0;
 
@@ -186,6 +186,7 @@ struct isx005_state {
 	int preview_size;
 	int check_dataline;
 	int set_app;
+	int set_vhflip;
 };
 
 const static struct v4l2_fmtdesc capture_fmts[] = {
@@ -240,28 +241,6 @@ void isx005_flash_set_first(struct v4l2_subdev *sd)
 	int ret;
 
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
-/*	
-	short unsigned int temp = 0;
-
-	ret = isx005_i2c_read(client, LED_ON, &temp);
-	printk("LED_ON = %d\n", temp);
-	ret = isx005_i2c_read(client, CAP_HALF_AE_CTRL, &temp);
-	printk("CAP_HALF_AE_CTRL = %d\n", temp);
-	ret = isx005_i2c_read(client, HALF_AWB_CTRL, &temp);
-	printk("HALF_AWB_CTRL = %d\n", temp);
-
-	ret = isx005_i2c_read(client, CAP_GAINOFFSET, &temp);
-	printk("CAP_GAINOFFSET = %d\n", temp);
-	ret = isx005_i2c_read(client, CAP_HALF_AE_CTRL, &temp);
-	printk("CAP_HALF_AE_CTRL = %d\n", temp);
-	ret = isx005_i2c_read(client, STB_CONT_SHIFT_R, &temp);
-	printk("STB_CONT_SHIFT_R = %d\n", temp);
-	ret = isx005_i2c_read(client, STB_CONT_SHIFT_B, &temp);
-	printk("STB_CONT_SHIFT_B = %d\n", temp);
-	ret = isx005_i2c_read(client, CONT_SHIFT, &temp);
-	printk("CONT_SHIFT = %d\n", temp);
-*/
-
 
 	//	Read AE Scale/AWB Ratio
 	ret = isx005_i2c_read(client, AESCL_AUTO, &ae_auto);
@@ -556,7 +535,7 @@ static inline int isx005_i2c_read_multi(struct i2c_client *client,
 	}
 
 	/*
-	 * [Arun c]Data comes in Little Endian in parallel mode; So there
+	 * Data comes in Little Endian in parallel mode; So there
 	 * is no need for byte swapping here
 	 */
 	*data = *(unsigned long *)(&buf);
@@ -607,7 +586,7 @@ static inline int isx005_i2c_read(struct i2c_client *client,
 	}
 
 	/*
-	 * [Arun c]Data comes in Little Endian in parallel mode; So there
+	 * Data comes in Little Endian in parallel mode; So there
 	 * is no need for byte swapping here
 	 */
 	*data = *(unsigned short *)(&buf);
@@ -643,7 +622,7 @@ static inline int isx005_i2c_write_multi(struct i2c_client *client, unsigned sho
 	buf[1] = addr & 0xff;	
 
 	/* 
-	 * [Arun c]Data should be written in Little Endian in parallel mode; So there
+	 * Data should be written in Little Endian in parallel mode; So there
 	 * is no need for byte swapping here
 	 */
 	if(w_len == 1)
@@ -1003,7 +982,7 @@ static int isx005_set_dzoom(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	
 	int err = 0;
 
-	isx005_msg(&client->dev, "[BestIQ] - isx005_set_dzoom~~~~~~ %d\n", ctrl->value);
+	isx005_msg(&client->dev, "isx005_set_dzoom~~~~~~ %d\n", ctrl->value);
 
 	switch (ctrl->value) 
 	{
@@ -1665,7 +1644,7 @@ static int isx005_set_capture_start(struct v4l2_subdev *sd, struct v4l2_control 
 		}
 		else
 		{
-			//When manual ISO is setted, Not lowLight capture. //kidggang - About techwin temp test binay
+			//When manual ISO is setted, Not lowLight capture. //About techwin
 			isx005_msg(&client->dev, "%s: Low Light\n", __func__);
 			if(gIsoCondition == 0)
 			{
@@ -2176,6 +2155,7 @@ static int isx005_set_sensor_mode(struct v4l2_subdev *sd, struct v4l2_control *c
 			isx005_camcorder_on, \
 			sizeof(isx005_camcorder_on) / sizeof(isx005_camcorder_on[0]), \
 			"isx005_camcorder_on");
+		msleep(200);
 		if (err < 0) 
 		{
 			dev_err(&client->dev, "%s: failed: i2c_write for set_sensor_mode %d\n", __func__, ctrl->value);
@@ -2482,13 +2462,13 @@ static int isx005_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		return -EIO;
 	}
 	
-	gIsoCondition = ctrl->value; //kidggang - About techwin temp test binay
+	gIsoCondition = ctrl->value; //About techwin
 	
 	return 0;
 }
 	
 static DEFINE_MUTEX(af_cancel_op);
-/* GAUDI Project([arun.c@samsung.com]) 2010.05.19. [Implemented AF cancel] */
+/* P1 Project 2010.05.19. [Implemented AF cancel] */
 static int isx005_set_auto_focus(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -3269,6 +3249,36 @@ static int isx005_aeawb_unlock(struct v4l2_subdev *sd, struct v4l2_control *ctrl
 	return 0;
 }
 
+isx005_get_esd_int(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	
+	u8 val;
+	int err;
+
+	err = isx005_i2c_read(client, 0x3406, &val); 
+	if(err < 0)
+	{
+		dev_err(&client->dev, "Failed I2C communication for getting ESD information\n");
+		ctrl->value = 0x01;
+	}
+	else
+	{
+		if(val == 0xFF)
+		{
+			isx005_msg(&client->dev, "No ESD interrupt!!\n");
+			ctrl->value = 0x00;
+		}
+		else
+		{
+			dev_err(&client->dev, "ESD interrupt happened!!\n");
+			ctrl->value = 0x01;
+		}
+	}
+	
+	return 0;
+}
+
 static int isx005_get_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -3310,7 +3320,7 @@ static void isx005_init_parameters(struct v4l2_subdev *sd)
 	state->strm.parm.capture.timeperframe.numerator = 1;
 	state->strm.parm.capture.capturemode = 0;
 
-//	state->framesize_index = ISX005_PREVIEW_SVGA;//bestiq
+//	state->framesize_index = ISX005_PREVIEW_SVGA;
 	state->fps = 30; /* Default value */
 	
 	state->jpeg.enable = 0;
@@ -3512,6 +3522,25 @@ static int isx005_get_framesize_index(struct v4l2_subdev *sd)
 		/* If it fails, return the default value. */
 		return (state->oprmode == ISX005_OPRMODE_IMAGE) ? ISX005_CAPTURE_3MP : ISX005_PREVIEW_SVGA;
 	}
+
+}
+
+static int isx005_set_flip(struct v4l2_subdev *sd,  struct v4l2_control *ctrl)
+{
+	int err=-1;
+
+	if((ctrl->value) == 1)
+	{
+		err = isx005_i2c_write(sd, isx005_vhflip_on,
+						sizeof(isx005_vhflip_on) / sizeof(isx005_vhflip_on[0]), "isx005_vhflip_on");
+	}
+	else
+	{
+		err = isx005_i2c_write(sd, isx005_vhflip_off,
+						sizeof(isx005_vhflip_off) / sizeof(isx005_vhflip_off[0]), "isx005_vhflip_off");
+	}
+
+	return err;
 }
 
 /* This function is called from the s_ctrl api
@@ -3817,7 +3846,7 @@ static int isx005_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 			break;
 
 		case V4L2_CID_CAM_DATE_INFO_YEAR:
-			ctrl->value = 2010;//state->dateinfo.year;//bestiq 
+			ctrl->value = 2010;//state->dateinfo.year;
 			break; 
 			
 		case V4L2_CID_CAM_DATE_INFO_MONTH:
@@ -3851,7 +3880,11 @@ static int isx005_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		case V4L2_CID_CAMERA_FLASH_CHECK:
 			ctrl -> value = flash_check;
 			break;
-			
+
+		case V4L2_CID_ESD_INT:
+			err = isx005_get_esd_int(sd, ctrl);
+			break;
+
 		default:
 			dev_err(&client->dev, "%s: no such ctrl\n", __func__);
 			return -ENOIOCTLCMD;
@@ -4081,6 +4114,11 @@ static int isx005_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		case V4L2_CID_CAMERA_APP_CHECK:
 			state->set_app = ctrl->value;
 			err = 0;
+			break;
+
+		case V4L2_CID_CAMERA_CHECK_FLIP:
+			state->set_vhflip = ctrl->value;
+			err = isx005_set_flip(sd, ctrl);
 			break;
 
 		default:
@@ -4326,7 +4364,7 @@ static int isx005_init(struct v4l2_subdev *sd, u32 val)
 	
 #ifdef CONFIG_LOAD_FILE
 
-	isx005_msg(&client->dev,"[BestIQ] + isx005_init\n");
+	isx005_msg(&client->dev,"isx005_init\n");
 	err = isx005_regs_table_init();
 	if (err) 
 	{
@@ -4348,7 +4386,7 @@ static int isx005_init(struct v4l2_subdev *sd, u32 val)
 
 	isx005_msg(&client->dev, "%s: isx005_init_image_tuning_setting~~~~~~~~~~~~~~\n", __func__);		
 	isx005_i2c_write(sd, isx005_init_image_tuning_setting, ISX005_INIT_IMAGETUNING_SETTING_REGS, "isx005_init_image_tuning_setting");
-	isx005_msg(&client->dev,"[BestIQ] - isx005_init\n");
+	isx005_msg(&client->dev,"isx005_init\n");
 
 #else
 
@@ -4398,7 +4436,6 @@ static int isx005_init(struct v4l2_subdev *sd, u32 val)
 		isx005_msg(&client->dev, "%s: i2c_read --- read_value_2 == 0x%x \n", __func__, read_value_2);
 		msleep(10);
 		/*
-		 * Arun c
 		 * When the esd error occures during init the while loop never returns
 		 * so keep a count of the loops
 		 */
@@ -4529,6 +4566,11 @@ static int isx005_remove(struct i2c_client *client)
 
 	printk("isx005_remove.................................................... \n");
 
+	if(camera_init == 1)
+	{
+		camera_init = 0;
+	}
+	
 	isx005_flash(0, sd);//flash off
 
 	v4l2_device_unregister_subdev(sd);

@@ -30,7 +30,16 @@
 #include <mach/hardware.h>
 #include <plat/gpio-cfg.h>
 #include <plat/irqs.h>
-//#include <plat/regs-gpio.h>
+#include <linux/io.h>
+#include <mach/dma.h>
+#include <plat/regs-otg.h>
+#include <mach/regs-gpio.h>
+#include <plat/gpio-cfg.h>
+
+#ifdef CONFIG_S5P_LPAUDIO
+#include <mach/cpuidle.h>
+#endif /* CONFIG_S5P_LPAUDIO */
+
 #define BT_SLEEP_ENABLER
 
 #define IRQ_BT_HOST_WAKE      IRQ_EINT(21)
@@ -54,6 +63,9 @@ extern void s3c_setup_uart_cfg_gpio(unsigned char port);
 
 static struct rfkill *bt_rfk;
 static const char bt_name[] = "bcm4329";
+
+static bool lpaudio_lock = 0;
+static bool bt_init_complete = 0;
 
 /*
 static unsigned int bt_uart_on_table[][4] = {
@@ -83,6 +95,44 @@ void bt_config_gpio_table(int array_size, int (*gpio_table)[4])
 			gpio_set_value(gpio, gpio_table[i][2]);
 	}
 }
+
+void bt_uart_rts_ctrl(int flag)
+{
+	unsigned int gpa0_bt_con;
+	unsigned int gpa0_bt_pud;
+	unsigned int gpa0_bt_dat;
+	
+	if(flag)
+	{
+		// BT RTS Set to HIGH
+		s3c_gpio_cfgpin(S5PV210_GPA0(3), S3C_GPIO_OUTPUT);
+		s3c_gpio_setpull(S5PV210_GPA0(3), S3C_GPIO_PULL_NONE);
+		gpa0_bt_dat = __raw_readl(S5PV210_GPA0DAT);
+		gpa0_bt_dat |= (1 << 3);
+		__raw_writel(gpa0_bt_dat, S5PV210_GPA0DAT);
+
+		gpa0_bt_con = __raw_readl(S5PV210_GPA0CONPDN);
+		gpa0_bt_con |= (1 << 6);
+		gpa0_bt_con &= ~(1 << 7);
+		__raw_writel(gpa0_bt_con, S5PV210_GPA0CONPDN);
+
+		gpa0_bt_pud = __raw_readl(S5PV210_GPA0PUDPDN);
+		gpa0_bt_pud &= ~(1 << 7 | 1 << 6);
+		__raw_writel(gpa0_bt_pud, S5PV210_GPA0PUDPDN);
+	}
+	else
+	{
+		// BT RTS Set to LOW
+		s3c_gpio_cfgpin(S5PV210_GPA0(3), S3C_GPIO_OUTPUT);
+		gpa0_bt_dat = __raw_readl(S5PV210_GPA0DAT);
+		gpa0_bt_dat &= ~(1 << 3);
+		__raw_writel(gpa0_bt_dat, S5PV210_GPA0DAT);
+
+		s3c_gpio_cfgpin(S5PV210_GPA0(3), S3C_GPIO_SFN(2));
+		s3c_gpio_setpull(S5PV210_GPA0(3), S3C_GPIO_PULL_NONE);
+	}
+}
+EXPORT_SYMBOL(bt_uart_rts_ctrl);
 
 static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 {
@@ -188,9 +238,15 @@ static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 
 static void bt_host_wake_work_func(struct work_struct *ignored)
 {
-		printk(KERN_DEBUG "[BT] wake_lock timeout = 5 sec\n");
-		wake_lock_timeout(&rfkill_wake_lock, 5*HZ);
+	printk(KERN_DEBUG "[BT] wake_lock timeout = 5 sec\n");
+	wake_lock_timeout(&rfkill_wake_lock, 5*HZ);
 
+	if(bt_init_complete && !lpaudio_lock)
+	{
+		s5p_set_lpaudio_lock(1);
+		lpaudio_lock = 1;
+	}
+	
 	enable_irq(IRQ_BT_HOST_WAKE);
 }
 static DECLARE_WORK(bt_host_wake_work, bt_host_wake_work_func);
@@ -305,6 +361,13 @@ static int bluetooth_set_sleep(void *data, enum rfkill_user_states state)
 			
 			printk("[BT] wake_unlock(bt_wake_lock)\n");
 			wake_unlock(&bt_wake_lock);
+			
+			if(bt_init_complete && lpaudio_lock)
+			{
+				s5p_set_lpaudio_lock(0);
+				lpaudio_lock = 0;
+			}
+			
 			break;
 
 		case RFKILL_USER_STATE_SOFT_BLOCKED:
@@ -384,6 +447,7 @@ static int __init jupiter_rfkill_init(void)
 	platform_driver_register(&jupiter_device_btsleep);
 #endif
 
+	bt_init_complete = 1;
 	return rc;
 }
 

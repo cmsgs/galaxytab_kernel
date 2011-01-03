@@ -108,7 +108,7 @@ struct key_table dock_keycodes[KEYBOARD_SIZE] =
     {	KEY_9,              	 false},	//	38		26
     {	KEY_0,              	 false},	//	39		27
     {	KEY_ENTER,          	 false},	//	40		28
-    {	KEY_POWER,          	 false},	//	41		29
+    {	KEY_SCREENLOCK,          	 false},	//	41		29
     {	KEY_BACKSPACE,      	 false},	//	42		2A
     {	KEY_TAB,            	 false},	//	43		2B
     {	KEY_SPACE,          	 false},	//	44		2C
@@ -184,10 +184,10 @@ struct key_table dock_keycodes[KEYBOARD_SIZE] =
     {	KEY_F13,            	 false},	//	114		72
     {	KEY_LEFTSHIFT,      	 false},	//	115		73
     {	KEY_F16,            	 false},	//	116		74
-    {	KEY_F15,            	 false},	//	75		Left GUI (Windows Key)
+    {	KEY_F17,            	 false},	//	75		Left GUI (Windows Key)
     {	KEY_F19,            	 false},	//	118		76
     {	KEY_RIGHTSHIFT,     	 false},	//	119		77
-    {	KEY_F17,            	 false},	//	120		78
+    {	KEY_F15,            	 false},	//	120		78
     {	KEY_RESERVED,       	 false},	//	121		79		Right GUI (Windows Key)
     {	KEY_RESERVED,       	 false},	//	122		7A
     {	KEY_RESERVED,       	 false},	//	123		7B

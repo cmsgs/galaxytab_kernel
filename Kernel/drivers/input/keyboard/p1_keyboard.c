@@ -89,21 +89,23 @@ static void key_event_work(struct work_struct *work)
                 case US_KEYBOARD:
                     data->kl = US_KEYLAYOUT;
                     dock_keycodes[49].keycode = KEY_BACKSLASH;
-                    printk(KERN_DEBUG "[Keyboard] US keyboard is detected.\n");
+                    /* for the wakeup state*/
+                    pre_kl = data->kl;
+                    printk(KERN_DEBUG "[Keyboard] US keyboard is attacted.\n");
                     break;
 
                 case UK_KEYBOARD:
                     data->kl = UK_KEYLAYOUT;
                     dock_keycodes[49].keycode = KEY_NUMERIC_POUND;
-                    printk(KERN_DEBUG "[Keyboard] UK keyboard is detected.\n");
+                    /* for the wakeup state*/
+                    pre_kl = data->kl;
+                    printk(KERN_DEBUG "[Keyboard] UK keyboard is attacted.\n");
                     break;
 
                 default:
                     printk(KERN_DEBUG "[Keyboard] Unkown key layout : %x\n", scan_code);
                     break;
             }
-            /* for the wakeup state*/
-            pre_kl = data->kl;
         }
         else
         {
@@ -125,16 +127,22 @@ static void key_event_work(struct work_struct *work)
                     {
                         if(press)
                         {
+                            // workaround keyboard issue
+                            if(dock_keycodes[keycode].pressed)
+                            {
+                                input_report_key(data->input_dev, dock_keycodes[keycode].keycode, 0);
+                                msleep(1);
+                            }
                             dock_keycodes[keycode].pressed = true;
                             printk(KERN_DEBUG "[Keyboard] %d key is pressed.\n", dock_keycodes[keycode].keycode);
                         }
                         else
                         {
                             // workaround keyboard issue
-                            if(dock_keycodes[keycode].pressed)
+                            if(!(dock_keycodes[keycode].pressed))
                             {
-                                input_report_key(data->input_dev, dock_keycodes[keycode].keycode, 0);
-                                msleep(10);
+                                input_report_key(data->input_dev, dock_keycodes[keycode].keycode, 1);
+                                msleep(1);
                             }
                             dock_keycodes[keycode].pressed = false;
                             printk(KERN_DEBUG "[Keyboard] %d key is released.\n", dock_keycodes[keycode].keycode);
@@ -219,6 +227,7 @@ int check_keyboard_dock(void)
     int try_cnt = 0;
     int error = 0;
     int max_cnt = 10;
+    int i = 0;
 
     if(gpio_get_value(g_data->gpio))
     {
@@ -229,12 +238,10 @@ int check_keyboard_dock(void)
         /*Do not use the keyboard in this version.
          * Because of the issue with the USB otg.
         */
-#if defined (CONFIG_TARGET_LOCALE_EUR) || defined (CONFIG_TARGET_LOCALE_HKTW) || defined (CONFIG_TARGET_LOCALE_HKTW_FET)
+#if defined (CONFIG_TARGET_LOCALE_EUR) || defined (CONFIG_TARGET_LOCALE_HKTW) || defined (CONFIG_TARGET_LOCALE_HKTW_FET) || defined (CONFIG_TARGET_LOCALE_USAGSM)
         if(HWREV == 0x10||HWREV == 0x11)
 #elif defined (CONFIG_TARGET_LOCALE_KOR)
         if(HWREV < 0xf) // It works only on Rev 13 or later.
-#elif defined (CONFIG_TARGET_LOCALE_USAGSM)
-        if(HWREV < 0x10)
 #else
         if(HWREV >= 0xff)
 #endif
@@ -262,7 +269,7 @@ int check_keyboard_dock(void)
         {
             g_data->kl = pre_kl;
             dockconnected = true;
-        }
+       }
 
         if(!keyboard_enable)
         {
@@ -336,6 +343,14 @@ int check_keyboard_dock(void)
             pre_connected = false;
             handshaking = false;
             disconnected_time = jiffies_to_msecs(jiffies);
+            for(i = 0; i < KEYBOARD_MAX; i++)
+            {
+                if(dock_keycodes[i].pressed)
+                {
+                    input_report_key(g_data->input_dev, dock_keycodes[i].keycode, 0);
+                    dock_keycodes[i].pressed = false;
+                }
+            }
         }
         return 0;
     }

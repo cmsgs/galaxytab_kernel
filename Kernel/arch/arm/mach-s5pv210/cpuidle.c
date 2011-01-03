@@ -447,12 +447,15 @@ static int s5p_idle_bm_check(void)
 		return 0;
 }
 
+extern void bt_uart_rts_ctrl(int flag);
 /* Actual code that puts the SoC in different idle states */
 static int s5p_enter_idle_lpaudio(struct cpuidle_device *dev,
 				struct cpuidle_state *state)
 {
 	struct timeval before, after;
 	int idle_time;
+
+	bt_uart_rts_ctrl(1);
 
 	local_irq_disable();
 	do_gettimeofday(&before);
@@ -465,6 +468,9 @@ static int s5p_enter_idle_lpaudio(struct cpuidle_device *dev,
 	local_irq_enable();
 	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
 			(after.tv_usec - before.tv_usec);
+
+	bt_uart_rts_ctrl(0);
+	
 	return idle_time;
 }
 

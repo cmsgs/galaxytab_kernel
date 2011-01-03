@@ -84,7 +84,7 @@ static bool set_mode_for_ta = false;		// true: TA or USB, false: normal
 static int set_mode_for_amoled = 0;		//0: TFt-LCD, 1: AMOLED
 //static int config_mode_val = 0; 	//0: normal 1: stylus
 static int gFirmware_Update_State = FW_UPDATE_READY;
-#if defined (CONFIG_TARGET_LOCALE_KOR)
+#if defined (CONFIG_TARGET_LOCALE_KOR) || defined (CONFIG_TARGET_LOCALE_USAGSM)
 static bool gbfilter =false;
 #endif
 
@@ -260,86 +260,8 @@ static DEVICE_ATTR(brightness, S_IRUGO | S_IWUSR, NULL, key_led_store);
 #endif      //KEY_LED_CONTROL
 
 
-#if defined (CONFIG_TARGET_LOCALE_KOR)
-#if defined (CAMERA_FLASH_CONTROL)
-void init_camera_flash(void)
-{
-    int err = 0;
-
-    err = gpio_request(S5PV210_MP04(2), "MP04");
-    if (err)
-    {
-        printk(KERN_ERR "failed to request MP04 for camera control\n");
-        return err;
-    }
-    err = gpio_request(S5PV210_MP04(3), "MP04");
-    if (err)
-    {
-        printk(KERN_ERR "failed to request MP04 for camera control\n");
-        return err;
-    }
-
-    //default off
-    gpio_direction_output(S5PV210_MP04(2), 0);
-    gpio_direction_output(S5PV210_MP04(3), 0);
-
-    gpio_free(S5PV210_MP04(2));
-    gpio_free(S5PV210_MP04(3));
-
-}
-
-void camera_flash_on(bool bOn)
-{
-
-    printk("%s, flash set is %d\n", __func__, bOn);
-
-    if (bOn == 0)
-    {
-        //flash off
-        gpio_direction_output(S5PV210_MP04(2), 0);
-        gpio_direction_output(S5PV210_MP04(3), 0);
-    }
-    else
-    {
-        gpio_direction_output(S5PV210_MP04(3), 1);
-        udelay(20);
-        //gpio on
-        gpio_direction_output(S5PV210_MP04(2), 1);
-        mdelay(2);
-    }
-    gpio_free(S5PV210_MP04(2));
-    gpio_free(S5PV210_MP04(3));
-
-}
-
-static ssize_t camera_flash_store(struct device *dev, struct device_attribute *attr,
-		const char *buf, size_t size)
-{
-    int i = 0;
-    if(sscanf(buf,"%d",&i) !=1 )
-    {
-        printk(KERN_ERR"[TSP] cameraflash write error\n");
-    }
-
-    if(i == 1)
-    {
-        camera_flash_on(true);
-        printk(KERN_DEBUG "[TSP] %s: cameraflash is on.\n", __func__);
-    }
-    else
-    {
-        camera_flash_on(false);
-        printk(KERN_DEBUG "[TSP] %s: cameraflash is off.\n", __func__);
-    }
-
-    return size;
-}
-static DEVICE_ATTR(camera_flash_on, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, NULL, camera_flash_store);
-#endif
-#endif
-
 #if defined(DRIVER_FILTER)
-#if defined (CONFIG_TARGET_LOCALE_KOR)
+#if defined (CONFIG_TARGET_LOCALE_KOR) || defined (CONFIG_TARGET_LOCALE_USAGSM)
 static void equalize_coordinate(bool detect, u8 id, u16 *px, u16 *py)
 {
     static int tcount[MAX_USING_FINGER_NUM] = { 0, };
@@ -620,9 +542,13 @@ int QT602240_Multitouch_Config_Init(struct qt602240_data *data)
     touchscreen_config.orient = 0x04;       // 0x4 : Invert Y, 0x2 : Invert X, 0x1 : Switch
 
     touchscreen_config.mrgtimeout = 0x00;
-    touchscreen_config.movhysti = 10;   //0x1;    // Move hysteresis, initial
+    touchscreen_config.movhysti = 15;   //0x1;    // Move hysteresis, initial
     touchscreen_config.movhystn = 10;  //0x1     // Move hysteresis, next
+#if defined(CONFIG_TARGET_LOCALE_KOR) || defined (CONFIG_TARGET_LOCALE_USAGSM)
+    touchscreen_config.movfilter = 0x0c;              // Filter Limit[6:4] , Adapt threshold [3:0]
+#else
     touchscreen_config.movfilter = 0x0b;              // Filter Limit[6:4] , Adapt threshold [3:0]
+#endif    
     touchscreen_config.numtouch= 0x05;
     touchscreen_config.tchdi = 0x02;
     touchscreen_config.mrghyst = 0x5;               // Merge hysteresis
@@ -728,6 +654,7 @@ int QT602240_Grip_Face_Suppression_Config_Init(struct qt602240_data *data)
 
 int QT602240_Noise_Config_Init(struct qt602240_data *data)
 {
+
 //    int version = data->info->version;
     //0x8 : Enable Median filter, 0x4 : Enable Frequency hopping, 0x1 : Enable
     noise_suppression_config.ctrl = 0x0d;    //Median filter off, report enable
@@ -740,11 +667,19 @@ int QT602240_Noise_Config_Init(struct qt602240_data *data)
     noise_suppression_config.actvgcafvalid = 3;//0x0f;   //Minium number of samples in active mode
     noise_suppression_config.noisethr = 20;       //0x0f;  // Threshold for the noise signal
     noise_suppression_config.freqhopscale = 0x00;//0x1e;
+#if defined(CONFIG_TARGET_LOCALE_KOR) || defined (CONFIG_TARGET_LOCALE_USAGSM)
+    noise_suppression_config.freq[0] = 11;
+    noise_suppression_config.freq[1] = 15;
+    noise_suppression_config.freq[2] = 36;
+    noise_suppression_config.freq[3] = 45;
+    noise_suppression_config.freq[4] = 55;
+#else
     noise_suppression_config.freq[0] = 10;
     noise_suppression_config.freq[1] = 15;
     noise_suppression_config.freq[2] = 20;
     noise_suppression_config.freq[3] = 25;
     noise_suppression_config.freq[4] = 30;
+#endif
     noise_suppression_config.idlegcafvalid = 3;
 
     /* Write Noise suppression config to chip. */
@@ -2395,7 +2330,7 @@ static ssize_t key_threshold_store(struct device *dev, struct device_attribute *
 static DEVICE_ATTR(firmware1, S_IRUGO | S_IWUSR, firmware1_show, firmware1_store);
 static DEVICE_ATTR(key_threshold, S_IRUGO | S_IWUSR, key_threshold_show, key_threshold_store);
 
-#if defined (CONFIG_TARGET_LOCALE_KOR)
+#if defined (CONFIG_TARGET_LOCALE_KOR) || defined (CONFIG_TARGET_LOCALE_USAGSM)
 static ssize_t tsp_filter_store(struct device *dev, struct device_attribute *attr,
 		const char *buf, size_t size)
 {
@@ -2430,12 +2365,6 @@ static int __devinit qt602240_probe(struct i2c_client *client,
 	struct class *leds_class;
 	struct device *led_dev;
 #endif      //KEY_LED_CONTROL
-#if defined (CONFIG_TARGET_LOCALE_KOR)
-#if defined (CAMERA_FLASH_CONTROL)
-    struct class *cameraflash_class;
-    struct device *cameraflash_dev;
-#endif      //CAMERA_FLASH_CONTROL
-#endif      //CONFIG_TARGET_LOCALE_KOR
 
 	int ret;
 	int i;
@@ -2543,7 +2472,7 @@ static int __devinit qt602240_probe(struct i2c_client *client,
 	if (device_create_file(ts_dev, &dev_attr_key_threshold) < 0)
 		pr_err("Failed to create device file(%s)!\n", dev_attr_key_threshold.attr.name);
 
-#if defined (CONFIG_TARGET_LOCALE_KOR)
+#if defined (CONFIG_TARGET_LOCALE_KOR) || defined (CONFIG_TARGET_LOCALE_USAGSM)
     if (device_create_file(ts_dev, &dev_attr_tsp_filter) < 0)
         pr_err("Failed to create device file(%s)!\n", dev_attr_tsp_filter.attr.name);
 #endif
@@ -2594,23 +2523,6 @@ static int __devinit qt602240_probe(struct i2c_client *client,
                 pr_err("Failed to create device file(%s)!\n", dev_attr_brightness.attr.name);
         }
 #endif		//KEY_LED_CONTROL
-
-#if defined (CONFIG_TARGET_LOCALE_KOR)
-#if defined (CAMERA_FLASH_CONTROL)
-
-            init_camera_flash();
-
-            cameraflash_class = class_create(THIS_MODULE, "camera");
-            if (IS_ERR(cameraflash_class))
-                return PTR_ERR(cameraflash_class);
-
-            cameraflash_dev = device_create(cameraflash_class, NULL, 0, NULL, "flash_control");
-
-            if (device_create_file(cameraflash_dev, &dev_attr_camera_flash_on) < 0)
-                pr_err("Failed to create device file(%s)!\n", dev_attr_camera_flash_on.attr.name);
-
-#endif		//CAMERA_FLASH_CONTROL
-#endif      //CONFIG_TARGET_LOCALE_KOR
 
 #if 0		// temp. remove
 	//moon: for checking Charger

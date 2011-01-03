@@ -61,6 +61,9 @@ typedef enum
 {
 	LCD_TYPE_VA,
 	LCD_TYPE_PLS,
+//	LCD_TYPE_T3,
+//	LCD_TYPE_T4,
+//	LCD_TYPE_T5,
 	LCD_TYPE_MAX,
 }Lcd_Type;
 
@@ -471,6 +474,15 @@ static int __init lms700_probe(struct platform_device *pdev)
 	case LCD_TYPE_PLS:
 		pr_info("LCD_TYPE_PLS\n");
 		break;
+//	case LCD_TYPE_T3:
+//		pr_info("LCD_TYPE_Type3\n");
+//		break;
+//	case LCD_TYPE_T4:
+//		pr_info("LCD_TYPE_Type4\n");
+//		break;
+//	case LCD_TYPE_T5:
+//		pr_info("LCD_TYPE_Type5\n");
+//		break;
 	}
 	//lcd_type = LCD_TYPE_VA;
 

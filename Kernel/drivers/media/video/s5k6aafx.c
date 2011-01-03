@@ -410,7 +410,7 @@ static int s5k6aafx_write_regs_from_sd(struct v4l2_subdev *sd, char s_name[])
 		if ((temp & S5K6AAFX_DELAY) == S5K6AAFX_DELAY) 
 		{                                                    
 			delay = temp & 0xFFFF;                                                                              
-			printk("[kidggang]:func(%s):line(%d):delay(0x%x):delay(%d)\n",__func__,__LINE__,delay,delay);       
+			//printk("func(%s):line(%d):delay(0x%x):delay(%d)\n",__func__,__LINE__,delay,delay);       
 			msleep(delay);                                                                                      
 			continue;                                                                                           
 		}
@@ -474,7 +474,7 @@ static int s5k6aafx_write_regs(struct v4l2_subdev *sd,
 		if ((temp & S5K6AAFX_DELAY) == S5K6AAFX_DELAY) 
 		{                                                    
 			delay = temp & 0xFFFF;                                                                              
-			printk("[kidggang]:func(%s):line(%d):delay(0x%x):delay(%d)\n",__func__,__LINE__,delay,delay);       
+			//printk("func(%s):line(%d):delay(0x%x):delay(%d)\n",__func__,__LINE__,delay,delay);       
 			msleep(delay);                                                                                      
 			continue;                                                                                           
 		}
@@ -624,7 +624,7 @@ static int s5k6aafx_enum_framesizes(struct v4l2_subdev *sd, \
 	fsize->discrete.width = state->set_fmt.width;
 	fsize->discrete.height = state->set_fmt.height;
 	
-	printk("[zzangdol_test] %s : width - %d , height - %d\n", __func__, fsize->discrete.width, fsize->discrete.height);
+	printk("%s : width - %d , height - %d\n", __func__, fsize->discrete.width, fsize->discrete.height);
 
 	return 0;
 }
@@ -675,7 +675,7 @@ static int s5k6aafx_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 
 	state->req_fmt.pixelformat = fmt->fmt.pix.pixelformat;
 
-	printk("[zzangdol] %s : width - %d , height - %d\n", __func__, state->req_fmt.width, state->req_fmt.height);
+	printk("%s : width - %d , height - %d\n", __func__, state->req_fmt.width, state->req_fmt.height);
 
 	return 0;
 }
@@ -837,7 +837,7 @@ static int s5k6aafx_s_config(struct v4l2_subdev *sd,
 		state->req_fmt.width = pdata->default_width;
 		state->req_fmt.height = pdata->default_height;
 
-		printk("[zzangdol] %s : width - %d , height - %d\n", __func__, state->req_fmt.width, state->req_fmt.height);
+		printk("%s : width - %d , height - %d\n", __func__, state->req_fmt.width, state->req_fmt.height);
 	}
 
 	if (!pdata->pixelformat)
@@ -1038,7 +1038,7 @@ static int s5k6aafx_check_dataline_stop(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct s5k6aafx_state *state = to_state(sd);
-	int err = -EINVAL, i;
+	int err = -EINVAL;
 
 	extern int s5k6aafx_power_reset(void);
 
@@ -1061,6 +1061,25 @@ static int s5k6aafx_check_dataline_stop(struct v4l2_subdev *sd)
 //       mdelay(100);
 	return err;
 }
+
+static int s5k6aafx_set_flip(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
+{
+	int err = 0;
+	FUNC_ENTR();
+
+	if((ctrl->value) == 1)
+	{
+			err = s5k6aafx_write_regs(sd, s5k6aafx_vhflip_on,
+					sizeof(s5k6aafx_vhflip_on) / sizeof(s5k6aafx_vhflip_on[0]));
+	}
+	else
+	{
+			err = s5k6aafx_write_regs(sd, s5k6aafx_vhflip_off,
+					sizeof(s5k6aafx_vhflip_off) / sizeof(s5k6aafx_vhflip_off[0]));
+	}
+	return err;
+}
+
 static int s5k6aafx_set_frame_rate(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	int err = 0;
@@ -1107,6 +1126,15 @@ static int s5k6aafx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	FUNC_ENTR();
 	
 	printk("ctrl->id : %d \n", ctrl->id - V4L2_CID_PRIVATE_BASE);
+	if(state->check_dataline)
+	{
+		if( ( ctrl->id != V4L2_CID_CAM_PREVIEW_ONOFF ) &&
+			( ctrl->id != V4L2_CID_CAMERA_CHECK_DATALINE_STOP ) &&
+			( ctrl->id != V4L2_CID_CAMERA_CHECK_DATALINE ) )
+			{
+				return 0;
+			}
+	} 
 
 	switch (ctrl->id) {
 		case V4L2_CID_CAM_PREVIEW_ONOFF:
@@ -1125,14 +1153,14 @@ static int s5k6aafx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 			err = s5k6aafx_set_capture_start(sd, ctrl);
 			printk("V4L2_CID_CAM_CAPTURE [%d] \n", ctrl->value);
 			break;			
-			//[zzangdol] add capture mode and separate preview mode
+			//add capture mode and separate preview mode
 			
 		case V4L2_CID_CAMERA_VT_MODE:
 			state->vt_mode = ctrl->value;
 			err = 0;
 			printk("V4L2_CID_CAMERA_VT_MODE [%d] \n", ctrl->value);
 			break;			
-			//[zzangdol] add vt mode for read vt settings
+			//add vt mode for read vt settings
 			
 		case V4L2_CID_CAMERA_BRIGHTNESS:
 			err = s5k6aafx_set_brightness(sd, ctrl);
@@ -1143,7 +1171,7 @@ static int s5k6aafx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 			err = s5k6aafx_set_blur(sd, ctrl);
 			printk("V4L2_CID_CAMERA_VGA_BLUR [%d] \n", ctrl->value);
 			break;			
-			//[zzangdol] CID_CAMERA_VGA_BLUR
+			//CID_CAMERA_VGA_BLUR
 			
 #if defined(CONFIG_TARGET_LOCALE_LTN)
 		//latin_cam VT Camera Antibanding
@@ -1168,6 +1196,19 @@ static int s5k6aafx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 			err = s5k6aafx_set_frame_rate(sd, ctrl);
 			state->fps = ctrl->value;
 			break;
+			
+		case V4L2_CID_CAMERA_APP_CHECK:
+			err = 0;
+			break;
+			
+		case V4L2_CID_CAM_JPEG_QUALITY:
+			err = 0;
+			break;
+
+		case V4L2_CID_CAMERA_CHECK_FLIP:
+			err = s5k6aafx_set_flip(sd, ctrl);
+			break;
+
 		default:
 			dev_err(&client->dev, "%s: no such control\n", __func__);
 			break;

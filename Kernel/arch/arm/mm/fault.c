@@ -177,6 +177,7 @@ __do_user_fault(struct task_struct *tsk, unsigned long addr,
 
 	if( 0 != strncmp( current->group_leader->comm, "playlogo", sizeof("playlogo")) ) // the process which is decided not to check.
 	{
+#if 0 // only param_high sends device into user fault.
         if( 0xdeadd00d == addr )
             printk("[DBG] User Fault Reason : dvmAbort \n"); 
             ////////////////////////
@@ -188,7 +189,7 @@ __do_user_fault(struct task_struct *tsk, unsigned long addr,
 			if ( PLATFORM_UPLOAD_ADDR == addr )
 				panic("[DBG] User Fault Reason : ANR \n");
 		}
-
+#endif
 		if(kernel_sec_check_debug_level_high()==1)
 			panic("[DBG] User Fault\n");
 	}

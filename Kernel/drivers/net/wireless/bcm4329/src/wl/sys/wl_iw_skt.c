@@ -3082,6 +3082,7 @@ wl_iw_escan_set_scan(
 	wlc_ssid_t ssid;
 	escan_info_t *escan = g_escan;
 	wl_scan_results_t *results;
+	int specific_scan;
 
 	WL_TRACE(("%s: SIOCSIWSCAN\n", dev->name));
 
@@ -3092,11 +3093,18 @@ wl_iw_escan_set_scan(
 	if (!escan)
 		return wl_iw_set_scan(dev, info, wrqu, extra);
 
+	specific_scan = (wrqu->data.length == sizeof(struct iw_scan_req)) && (wrqu->data.flags & IW_SCAN_THIS_ESSID);
+
 	if (escan->escan_state == ESCAN_STATE_SCANING) {
+		if ((g_scan_specified_ssid == 0) && (specific_scan != 0)) {
 		int err;
-		/* Abort Scan for Connection */
 		err = wl_iw_escan(escan, NULL, WL_SCAN_ACTION_ABORT);
-		WL_SCAN(("%s: Scan in progress. ESCAN abort. err=%d\n", __FUNCTION__, err));
+			WL_SCAN(("%s: Specific scan aborts broad scan. ESCAN abort. err=%d\n", __FUNCTION__, err));
+		} else {
+			/* ignore current scan request */
+			WL_SCAN(("%s: Scan in progress. Ignore duplicate scan\n", __FUNCTION__));
+			return 0;
+		}
 	}
 
 	memset(&ssid, 0, sizeof(ssid));
@@ -3104,8 +3112,7 @@ wl_iw_escan_set_scan(
 
 #if WIRELESS_EXT > 17
 	
-	if (wrqu->data.length == sizeof(struct iw_scan_req)) {
-		if (wrqu->data.flags & IW_SCAN_THIS_ESSID) {
+	if (specific_scan) {
 			int as = 0;
 			struct iw_scan_req *req = (struct iw_scan_req *)extra;
 			ssid.SSID_len = MIN(sizeof(ssid.SSID), req->essid_len);
@@ -3115,7 +3122,6 @@ wl_iw_escan_set_scan(
 			dev_wlc_ioctl(dev, WLC_SET_PASSIVE_SCAN, &as, sizeof(as));
 			return wl_iw_set_scan(dev, info, wrqu, extra);
 		}
-	}
 #endif 
 
 	escan->escan_state = ESCAN_STATE_SCANING;
@@ -7344,10 +7350,8 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 			WL_TRACE(("ESCAN ABORTED\n"));
 			if (g_escan->escan_state == ESCAN_STATE_SCANING) {
 				g_escan->escan_state = ESCAN_STATE_IDLE;			
-				if (g_scan_specified_ssid == 1) {
 					wl_iw_send_scan_complete(g_escan->dev);
 				}
-			}
 		} else
 			WL_TRACE(("Unknown escan status %d: ignoring\n", status));
 

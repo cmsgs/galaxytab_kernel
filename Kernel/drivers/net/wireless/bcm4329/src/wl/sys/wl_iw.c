@@ -345,6 +345,8 @@ static void swap_key_to_BE(
 	key->iv_initialized = dtoh32(key->iv_initialized);
 }
 
+static int assoc_in_progress = 0;
+
 static int
 dev_wlc_ioctl(
 	struct net_device *dev,
@@ -1645,6 +1647,7 @@ wl_iw_set_mode(
 		int err;
 		/* Abort Scan for Connection */
 		err = wl_iw_escan(g_escan, NULL, WL_SCAN_ACTION_ABORT);
+		g_escan->escan_state = ESCAN_STATE_IDLE;
 		WL_SCAN(("%s: Aborting ESCAN. err=%d\n", __FUNCTION__, err));
 	}
 #endif
@@ -3074,12 +3077,25 @@ wl_iw_escan_set_scan(
 	escan_info_t *escan = g_escan;
 	wl_scan_results_t *results;
 	int specific_scan;
+	int assoc_waiting_cnt = 0;
 
 	WL_TRACE(("%s: SIOCSIWSCAN\n", dev->name));
 
 	
 	if (g_onoff == G_WLAN_SET_OFF)
 		return 0;
+
+	while ((assoc_in_progress == 1) && (assoc_waiting_cnt < 10)) {
+		msleep(200);
+		assoc_waiting_cnt++;
+		WL_TRACE(("%s: Assoc in progress, Waiting...[%d]\n", __FUNCTION__,assoc_waiting_cnt));
+	}
+	if(!((assoc_waiting_cnt < 10))) {
+		WL_TRACE(("%s: Assoc in progress, Waiting...[%d]\n", __FUNCTION__,assoc_waiting_cnt));
+		return 0;
+	}
+    
+    assoc_in_progress = 0;
 
 	if (!escan)
 		return wl_iw_set_scan(dev, info, wrqu, extra);
@@ -3288,6 +3304,19 @@ wl_iw_handle_scanresults_ies(char **event_p, char *end,
 	return 0;
 }
 
+static uint _channel_40mhz(chanspec_t chspec)
+{
+	uint channel = CHSPEC_CHANNEL(chspec);
+	/* check for non-default band spec */
+	if (CHSPEC_IS40(chspec)) {
+		if (CHSPEC_SB_UPPER(chspec))
+			channel += CH_10MHZ_APART;
+		else if (CHSPEC_SB_LOWER(chspec))
+			channel -= CH_10MHZ_APART;
+	}
+	return channel;
+}
+
 static uint
 wl_iw_get_scan_prep(
 	wl_scan_results_t *list,
@@ -3354,7 +3383,7 @@ wl_iw_get_scan_prep(
 
 		
 		iwe.cmd = SIOCGIWFREQ;
-		iwe.u.freq.m = wf_channel2mhz(CHSPEC_CHANNEL(bi->chanspec),
+		iwe.u.freq.m = wf_channel2mhz(_channel_40mhz(bi->chanspec),			
 			CHSPEC_CHANNEL(bi->chanspec) <= CH_MAX_2G_CHANNEL ?
 			WF_CHAN_FACTOR_2_4_G : WF_CHAN_FACTOR_5_G);
 		iwe.u.freq.e = 6;
@@ -3442,7 +3471,6 @@ wl_iw_get_scan(
 	}
 	ci.scan_channel = dtoh32(ci.scan_channel);
 	if (ci.scan_channel){
-		g_scan_specified_ssid = 0;
 		return -EAGAIN;
 	}
 
@@ -3886,7 +3914,7 @@ wl_iw_scan_get_scan(
 
 			
 			iwe.cmd = SIOCGIWFREQ;
-			iwe.u.freq.m = wf_channel2mhz(CHSPEC_CHANNEL(bi->chanspec),
+			iwe.u.freq.m = wf_channel2mhz(_channel_40mhz(bi->chanspec),	
 				CHSPEC_CHANNEL(bi->chanspec) <= CH_MAX_2G_CHANNEL ?
 				WF_CHAN_FACTOR_2_4_G : WF_CHAN_FACTOR_5_G);
 			iwe.u.freq.e = 6;
@@ -4047,18 +4075,30 @@ wl_iw_set_essid(
 			kfree(join_params);
 
 			WL_DEBUG(("%s: join SSID='%s' with channel \n", __FUNCTION__,  g_ssid.SSID));
-
+			assoc_in_progress = 1;
 			return error;
 		}
 	}
 normal_scan:
 	WL_TRACE(("%s: Normal SET_ESSID. cnt=%d, param size=%d, dwrq->len=%d, extra=%p\n", 
 		__FUNCTION__, cnt, join_params_size, dwrq->length, extra));
-	g_ssid.SSID_len = htod32(g_ssid.SSID_len);
-	if ((error = dev_wlc_ioctl(dev, WLC_SET_SSID, &g_ssid, sizeof(g_ssid))))
-		return error;
+	if(g_ssid.SSID_len > 0) {
+		g_ssid.SSID_len = htod32(g_ssid.SSID_len);
+		if ((error = dev_wlc_ioctl(dev, WLC_SET_SSID, &g_ssid, sizeof(g_ssid))))
+			return error;
 
-	WL_DEBUG(("%s: join SSID='%s'\n", __FUNCTION__,  g_ssid.SSID));
+		WL_DEBUG(("%s: join SSID='%s'\n", __FUNCTION__,  g_ssid.SSID));
+	}
+	else {	
+		if (!g_ss_cache_ctrl.m_link_down) {
+			scb_val_t scbval;
+			WL_DEBUG(("%s: 0 length SSID while associated, Disassoc\n", __FUNCTION__));
+			bzero(&scbval, sizeof(scb_val_t));
+			dev_wlc_ioctl(dev, WLC_DISASSOC, &scbval, sizeof(scb_val_t));
+		}
+	}
+	
+	assoc_in_progress = 1;
 
 	return 0;
 }
@@ -7351,6 +7391,7 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 	
 	case WLC_E_SET_SSID: 
 		WL_TRACE(("Event WLC_E_SET_SSID: status=%d\n", status));
+		assoc_in_progress = 0;
 		if (status == WLC_E_STATUS_FAIL) {
 			WL_ERROR(("Event WLC_E_SET_SSID failed\n"));
 			/* wl_iw_send_priv_event(g_escan->dev, "ESSID_FAIL"); */

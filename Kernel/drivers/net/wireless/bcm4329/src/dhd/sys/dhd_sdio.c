@@ -40,7 +40,7 @@
 #include <siutils.h>
 #include <hndpmu.h>
 #include <hndsoc.h>
-#if 0
+#ifdef DHD_DEBUG
 #include <hndrte_armtrap.h>
 #include <hndrte_cons.h>
 #endif /* DHD_DEBUG */
@@ -152,13 +152,6 @@ DHD_SPINWAIT_SLEEP_INIT(sdioh_spinwait_sleep);
 extern int dhdcdc_set_ioctl(dhd_pub_t *dhd, int ifidx, uint cmd, void *buf, uint len);
 
 #ifdef DHD_DEBUG
-typedef struct {
-	uint32		buf;		/* Can't be pointer on (64-bit) hosts */
-	uint		buf_size;
-	uint		idx;
-	char		*_buf_compat;	/* Redundant pointer for backward compat. */
-} hndrte_log_t;
-
 /* Device console log buffer state */
 typedef struct dhd_console {
 	uint		count;			/* Poll interval msec counter */
@@ -1713,57 +1706,6 @@ xfer_done:
 }
 
 #ifdef DHD_DEBUG
-
-typedef struct _trap_struct {
-	uint32		type;
-	uint32		epc;
-	uint32		cpsr;
-	uint32		spsr;
-	uint32		r0;
-	uint32		r1;
-	uint32		r2;
-	uint32		r3;
-	uint32		r4;
-	uint32		r5;
-	uint32		r6;
-	uint32		r7;
-	uint32		r8;
-	uint32		r9;
-	uint32		r10;
-	uint32		r11;
-	uint32		r12;
-	uint32		r13;
-	uint32		r14;
-	uint32		pc;
-} trap_t;
-
-#define CBUF_LEN	(128)
-
-typedef struct {
-	/* Virtual UART
-	 *   When there is no UART (e.g. Quickturn), the host should write a complete
-	 *   input line directly into cbuf and then write the length into vcons_in.
-	 *   This may also be used when there is a real UART (at risk of conflicting with
-	 *   the real UART).  vcons_out is currently unused.
-	 */
-	volatile uint	vcons_in;
-	volatile uint	vcons_out;
-
-	/* Output (logging) buffer
-	 *   Console output is written to a ring buffer log_buf at index log_idx.
-	 *   The host may read the output when it sees log_idx advance.
-	 *   Output will be lost if the output wraps around faster than the host polls.
-	 */
-	hndrte_log_t	log;
-
-	/* Console input line buffer
-	 *   Characters are read one at a time into cbuf until <CR> is received, then
-	 *   the buffer is processed as a command line.  Also used for virtual UART.
-	 */
-	uint		cbuf_idx;
-	char		cbuf[CBUF_LEN];
-} hndrte_cons_t;
-
 static int
 dhdsdio_readshared(dhd_bus_t *bus, sdpcm_shared_t *sh)
 {
@@ -2779,13 +2721,18 @@ exit:
 void
 dhd_bus_stop(struct dhd_bus *bus, bool enforce_mutex)
 {
-	osl_t *osh = bus->dhd->osh;
+	osl_t *osh = 0;
 	uint32 local_hostintmask;
 	uint8 saveclk;
 	uint retries;
 	int err;
 
 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
+
+	if (!bus->dhd) 
+		return;
+
+	osh = bus->dhd->osh;
 
 	if (enforce_mutex)
 		dhd_os_sdlock(bus->dhd);
@@ -2804,6 +2751,7 @@ dhd_bus_stop(struct dhd_bus *bus, bool enforce_mutex)
 	bus->dhd->busstate = DHD_BUS_DOWN;
 
 	/* Force clocks on backplane to be sure F2 interrupt propagates */
+	
 	saveclk = bcmsdh_cfg_read(bus->sdh, SDIO_FUNC_1, SBSDIO_FUNC1_CHIPCLKCSR, &err);
 	if (!err) {
 		bcmsdh_cfg_write(bus->sdh, SDIO_FUNC_1, SBSDIO_FUNC1_CHIPCLKCSR,
@@ -4340,7 +4288,7 @@ clkwait:
 				bus->tx_seq = (bus->tx_seq + 1) % SDPCM_SEQUENCE_WRAP;
 		}
 
-		printf("Return_dpc value is : %d\n", ret);
+		DHD_TRACE(("Return_dpc value is : %d\n", ret));
 		bus->ctrl_frame_stat = FALSE;
 		dhd_wait_event_wakeup(bus->dhd);
 	}
@@ -5061,8 +5009,8 @@ dhdsdio_probe_attach(struct dhd_bus *bus, osl_t *osh, void *sdh, void *regsva,
 	}
 
 #ifdef DHD_DEBUG
-	printf("F1 signature read @0x18000000=0x%4x\n",
-	       bcmsdh_reg_read(bus->sdh, SI_ENUM_BASE, 4));
+	DHD_INFO(("F1 signature read @0x18000000=0x%4x\n",
+	       bcmsdh_reg_read(bus->sdh, SI_ENUM_BASE, 4)));
 
 
 #endif /* DHD_DEBUG */
@@ -5164,7 +5112,7 @@ dhdsdio_probe_attach(struct dhd_bus *bus, osl_t *osh, void *sdh, void *regsva,
 		if (dhd_dongle_memsize)
 			dhd_dongle_setmemsize(bus, dhd_dongle_memsize);
 
-		DHD_ERROR(("DHD: dongle ram size is set to %d(orig %d)\n",
+		DHD_TRACE(("DHD: dongle ram size is set to %d(orig %d)\n",
 			bus->ramsize, bus->orig_ramsize));
 	}
 

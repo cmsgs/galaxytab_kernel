@@ -133,6 +133,21 @@ static void s5p_snd_txctrl(int on)
 
 
 	if (on) {
+#if 1 //GNUX@2010.09.28 : avoid tick noise
+		// Flush I2S FIFO
+		iisfic = readl(s5p_i2s0_regs + S5P_IISFICS);
+		iisfic |= S3C2412_IISFIC_TXFLUSH;
+		writel(iisfic, s5p_i2s0_regs + S5P_IISFICS);
+
+		do {
+			cpu_relax();
+		} while ((__raw_readl(s5p_i2s0_regs + S5P_IISFICS) >> 8) & 0x7f);
+
+		iisfic = readl(s5p_i2s0_regs + S5P_IISFICS);
+		iisfic &= ~S3C2412_IISFIC_TXFLUSH;
+		writel(iisfic, s5p_i2s0_regs + S5P_IISFICS);
+#endif
+
 		iiscon |= S3C2412_IISCON_IIS_ACTIVE;
 		iiscon &= ~S3C2412_IISCON_TXCH_PAUSE;
 		iiscon &= ~S5P_IISCON_TXSDMAPAUSE;
@@ -185,24 +200,6 @@ static void s5p_snd_txctrl(int on)
 				iismod & S3C2412_IISMOD_MODE_MASK);
 			break;
 		}
-
-#if 1 //GNUX@2010.09.20 : avoid headset pop-up noise
-		if(get_headset_status())
-		{
-			// Flush I2S FIFO
-			iisfic = readl(s5p_i2s0_regs + S5P_IISFICS);
-			iisfic |= S3C2412_IISFIC_TXFLUSH;
-			writel(iisfic, s5p_i2s0_regs + S5P_IISFICS);
-
-			do {
-				cpu_relax();
-			} while ((__raw_readl(s5p_i2s0_regs + S5P_IISFICS) >> 8) & 0x7f);
-
-			iisfic = readl(s5p_i2s0_regs + S5P_IISFICS);
-			iisfic &= ~S3C2412_IISFIC_TXFLUSH;
-			writel(iisfic, s5p_i2s0_regs + S5P_IISFICS);
-		}
-#endif
 
 		writel(iismod, s5p_i2s0_regs + S3C2412_IISMOD);
 		writel(iiscon, s5p_i2s0_regs + S3C2412_IISCON);

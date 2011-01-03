@@ -238,6 +238,9 @@ typedef enum
 {
 	LCD_TYPE_VA,
 	LCD_TYPE_PLS,
+//	LCD_TYPE_T3,
+//	LCD_TYPE_T4,
+//	LCD_TYPE_T5,	
 	LCD_TYPE_MAX,
 }Lcd_Type;
 extern Lcd_Type lcd_type;
@@ -2586,7 +2589,7 @@ static ssize_t set_reg_store(struct device *dev, struct device_attribute *attr,c
 	return size;
 }
 
-static DEVICE_ATTR(set_reg, S_IRUGO | S_IWUSR, set_reg_show, set_reg_store);
+static DEVICE_ATTR(set_reg, 0666, set_reg_show, set_reg_store);
 
 static u32 read_reg_address=0;
 
@@ -2634,7 +2637,7 @@ static ssize_t read_reg_store(struct device *dev, struct device_attribute *attr,
 	return size;
 }
 
-static DEVICE_ATTR(read_reg, S_IRUGO | S_IWUSR, read_reg_show, read_reg_store);
+static DEVICE_ATTR(read_reg, 0666, read_reg_show, read_reg_store);
 
 static ssize_t show_regs_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -2677,7 +2680,7 @@ static ssize_t show_regs_store(struct device *dev, struct device_attribute *attr
 	return size;
 }
 
-static DEVICE_ATTR(show_regs, S_IRUGO | S_IWUSR, show_regs_show, show_regs_store);
+static DEVICE_ATTR(show_regs, 0666, show_regs_show, show_regs_store);
 
 static ssize_t set_bypass_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -2738,7 +2741,7 @@ static ssize_t set_bypass_store(struct device *dev, struct device_attribute *att
 	return size;
 }
 
-static DEVICE_ATTR(set_bypass, S_IRUGO | S_IWUSR, set_bypass_show, set_bypass_store);
+static DEVICE_ATTR(set_bypass, 0666, set_bypass_show, set_bypass_store);
 
 static ssize_t color_white_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -2757,12 +2760,21 @@ static DEVICE_ATTR(color_white, 0666, color_white_show, color_white_store);
 
 static ssize_t color_black_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
+#if defined(CONFIG_TARGET_LOCALE_NTT)
+	return sprintf(buf,"%u\n",-cmc623_state.black);
+#else
 	return sprintf(buf,"%u\n",cmc623_state.black);
+#endif
 }
 
 static ssize_t color_black_store(struct device *dev, struct device_attribute *attr,const char *buf, size_t size)
 {
 	sscanf(buf, "%d", &cmc623_state.black);
+
+#if defined(CONFIG_TARGET_LOCALE_NTT)
+	cmc623_state.black = -(cmc623_state.black);
+#endif
+	
 	cmc623_Color_Black_Change(cmc623_state.black,true);
 
 	return size;

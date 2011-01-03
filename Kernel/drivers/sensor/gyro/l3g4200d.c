@@ -394,7 +394,7 @@ static ssize_t l3g4200d_self_test(struct device *dev, struct device_attribute *a
 	reg[0] = 0x6f;
 	reg[1] = 0x00;
 	reg[2] = 0x00;
-	reg[3] = 0x90;
+	reg[3] = 0xA0;
 	reg[4] = 0x02;
 
 	l3g4200d_i2c_write(CTRL_REG1, &reg[0], 5);
@@ -451,7 +451,7 @@ static ssize_t l3g4200d_self_test(struct device *dev, struct device_attribute *a
 	printk("\n");
 	
 	// Enable Self Test
-	reg[0] = 0x92;
+	reg[0] = 0xA2;
 	l3g4200d_i2c_write(CTRL_REG4, &reg[0], 1);	
 	
 	mdelay(100);

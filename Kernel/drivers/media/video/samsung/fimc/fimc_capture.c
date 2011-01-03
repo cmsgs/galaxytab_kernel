@@ -267,7 +267,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 		if(ret != -ENOIOCTLCMD)
 			return ret;
 	} else {
-		if (ctrl->vt_mode == 1 && ctrl->device_id != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270))
+		if (((ctrl->vt_mode == 1) || (ctrl->vt_mode == 2)) && ctrl->device_id != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270))
 		{
 			ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;
@@ -275,9 +275,9 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 			ctrl->cam->window.height = 480;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
+			dev_err(ctrl->dev, "vtmode = %d, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->vt_mode, ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
 		}
-		else if (ctrl->vt_mode == 1 && ctrl->device_id == 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270))
+		else if (((ctrl->vt_mode == 1) || (ctrl->vt_mode == 2)) && ctrl->device_id == 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270))
 		{
 			ctrl->cam->window.left = 176;
 			ctrl->cam->window.top = 0;
@@ -285,7 +285,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 			ctrl->cam->window.height = 592;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = real, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
+			dev_err(ctrl->dev, "vtmode = %d, rotate = %d, device = rear, cam->width = %d, cam->height = %d\n", ctrl->vt_mode, ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
 		}
 		else
 		{
@@ -1545,7 +1545,7 @@ int fimc_streamon_capture(void *fh)
 		if(ret != -ENOIOCTLCMD)
 			return ret;
 	} else {
-		if (ctrl->vt_mode == 1 && ctrl->device_id != 0 && (cap->rotate == 90 || cap->rotate == 270))
+		if (((ctrl->vt_mode == 1) || (ctrl->vt_mode == 2)) && ctrl->device_id != 0 && (cap->rotate == 90 || cap->rotate == 270))
 		{
 			ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;
@@ -1553,9 +1553,9 @@ int fimc_streamon_capture(void *fh)
 			ctrl->cam->window.height = 480;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", cap->rotate, ctrl->cam->width, ctrl->cam->height);
+			dev_err(ctrl->dev, "vtmode = %d, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->vt_mode, cap->rotate, ctrl->cam->width, ctrl->cam->height);
 		}
-		else if (ctrl->vt_mode == 1 && ctrl->device_id == 0 && (cap->rotate == 90 || cap->rotate == 270))
+		else if (((ctrl->vt_mode == 1) || (ctrl->vt_mode == 2)) && ctrl->device_id == 0 && (cap->rotate == 90 || cap->rotate == 270))
 		{
 			ctrl->cam->window.left = 176;
 			ctrl->cam->window.top = 0;
@@ -1563,7 +1563,7 @@ int fimc_streamon_capture(void *fh)
 			ctrl->cam->window.height = 592;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = real, cam->width = %d, cam->height = %d\n", cap->rotate, ctrl->cam->width, ctrl->cam->height);
+			dev_err(ctrl->dev, "vtmode = %d, rotate = %d, device = rear, cam->width = %d, cam->height = %d\n", ctrl->vt_mode, cap->rotate, ctrl->cam->width, ctrl->cam->height);
 		}
 		else
 		{

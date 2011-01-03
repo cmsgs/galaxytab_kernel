@@ -12,6 +12,10 @@ ifeq ($(CONFIG_POWER_SUPPLY_DEBUG),y)
 EXTRA_CFLAGS += -DDEBUG
 endif
 
+ifeq ($(X_BUILD_LOCALE2),P1_ATT)
+   KBUILD_CFLAGS+= -DCONFIG_TARGET_LOCALE_USAGSM
+endif
+
 obj-$(CONFIG_POWER_SUPPLY)	+= power_supply.o
 
 obj-$(CONFIG_PDA_POWER)		+= pda_power.o

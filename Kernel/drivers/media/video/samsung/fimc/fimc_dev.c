@@ -33,7 +33,7 @@
 #include <mach/cpu-freq-v210.h>
 #endif
 #include <linux/videodev2_samsung.h>
-
+#include <plat/regs-fimc.h>
 #include "fimc.h"
 
 #define CLEAR_FIMC2_BUFF
@@ -382,9 +382,25 @@ static inline void fimc_irq_cap(struct fimc_control *ctrl)
 {
 	struct fimc_capinfo *cap = ctrl->cap;
 	int pp;
+	int i;
+	u32 cfg = 0;
 
 	fimc_hwset_clear_irq(ctrl);
-	fimc_hwget_overflow_state(ctrl);
+	if(fimc_hwget_overflow_state(ctrl))
+	{
+		/* s/w reset */
+		fimc_err("ESD interrupt happened!\n");
+		cfg = readl(ctrl->regs + S3C_CIGCTRL);
+		cfg |= (S3C_CIGCTRL_SWRST);
+		writel(cfg, ctrl->regs + S3C_CIGCTRL);
+		for(i=0;i<10000;++i)
+			;
+		//mdelay(1);
+
+		cfg = readl(ctrl->regs + S3C_CIGCTRL);
+		cfg &= ~S3C_CIGCTRL_SWRST;
+		writel(cfg, ctrl->regs + S3C_CIGCTRL);
+	}
 	pp = ((fimc_hwget_frame_count(ctrl) + 2) % 4);
 	if (cap->fmt.field == V4L2_FIELD_INTERLACED_TB) {
 		/* odd value of pp means one frame is made with top/bottom */
@@ -710,7 +726,7 @@ ssize_t fimc_read(struct file *filp, char *buf, size_t count, loff_t *pos)
 	gpio_free(S5PV210_MP04(2));
 	gpio_free(S5PV210_MP04(3));
 
-	return 0;
+	return err;
 }
 
 static

@@ -2642,7 +2642,6 @@ static unsigned long s5k6aafx_common[] ={
 #endif
 0x0F120001,  //REG_SF_USER_FlickerQuantChanged
 
-
 //////////////////////////
 // Basic Clock setting //
 //////////////////////////
@@ -6320,4 +6319,54 @@ static unsigned long s5k6aafx_vt_13fps[] =
 	0x002A01F0,
 	0x0F120001,  //REG_TC_GP_EnablePreview
 	0x0F120001,  //REG_TC_GP_EnablePreviewChanged
+};
+
+static unsigned long s5k6aafx_vhflip_on[] =
+{
+	//---------------------------------------//
+	// case 23 : XY_FLIP                     //
+	//---------------------------------------//
+	
+0xffff000A,		//REG_TC_GP_PrevConfigChanged
+0xFCFCD000,
+0x00287000,
+0x002A0262,
+0x0F12000E,  //REG_0TC_PCFG_uPrevMirror   [0]x [1]y [2]xy
+0x0F12000E,  //REG_0TC_PCFG_uCaptureMirror  
+0x002A021C,
+0x0F120000,  //REG_TC_GP_ActivePrevConfig
+0x002A0220,
+0x0F120001,  //REG_TC_GP_PrevOpenAfterChange
+0x002A01F8,
+0x0F120001,  //REG_TC_GP_NewConfigSync
+0x002A021E,
+0x0F120001,  //REG_TC_GP_PrevConfigChanged
+0x002A01F0,
+0x0F120001,  //REG_TC_GP_EnablePreview
+0x0F120001,  //REG_TC_GP_EnablePreviewChanged   
+};
+
+static unsigned long s5k6aafx_vhflip_off[] =
+{
+	//---------------------------------------//
+	// case 23 : NON_FLIP                    //
+	//---------------------------------------//
+
+0xffff000A,		//REG_TC_GP_PrevConfigChanged
+0xFCFCD000,
+0x00287000,
+0x002A0262,
+0x0F120001,  //REG_0TC_PCFG_uPrevMirror   [0]x [1]y [2]xy
+0x0F120001,  //REG_0TC_PCFG_uCaptureMirror  
+0x002A021C,
+0x0F120000,  //REG_TC_GP_ActivePrevConfig
+0x002A0220,
+0x0F120001,  //REG_TC_GP_PrevOpenAfterChange
+0x002A01F8,
+0x0F120001,  //REG_TC_GP_NewConfigSync
+0x002A021E,
+0x0F120001,  //REG_TC_GP_PrevConfigChanged
+0x002A01F0,
+0x0F120001,  //REG_TC_GP_EnablePreview
+0x0F120001,  //REG_TC_GP_EnablePreviewChanged      
 };

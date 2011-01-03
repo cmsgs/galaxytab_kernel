@@ -33,6 +33,10 @@
 #include <linux/regulator/max8998.h>
 #include "tspdrv.h"
 
+#ifdef CONFIG_TARGET_LOCALE_KOR
+#define COUNT_OF_MOTOR
+#endif
+
 #ifdef IMMVIBESPIAPI
 #undef IMMVIBESPIAPI
 #endif
@@ -51,6 +55,26 @@ extern unsigned int g_PWM_duty_max;
 
 struct pwm_device	*Immvib_pwm;
 static bool g_bAmpEnabled = false;
+
+#ifdef COUNT_OF_MOTOR
+struct class *vibe_class;
+struct device *vibe_dev;
+static unsigned int motor_cnt = 0;
+
+static void vibecnt_show(struct device *dev, struct device_attribute *attr, char *buf)
+{	
+	unsigned int retcnt=0;
+	printk(KERN_DEBUG "vibecnt_show\n");
+
+	retcnt=motor_cnt;
+	motor_cnt=0;
+
+	return sprintf(buf, "%d\n", retcnt);
+
+}
+
+static DEVICE_ATTR(vibecnt, S_IRUGO |S_IRUSR, vibecnt_show, NULL);
+#endif
 
 /*
 ** Called to disable amp (disable output force)
@@ -85,7 +109,10 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_AmpDisable(VibeUInt8 nActuatorIndex
         {
             pwm_config(Immvib_pwm, 0, g_PWM_duty_max/2);
             pwm_disable(Immvib_pwm);
-            gpio_set_value(VIB_EN, GPIO_LEVEL_LOW);
+            gpio_set_value(VIB_EN, GPIO_LEVEL_LOW);            
+#ifdef COUNT_OF_MOTOR
+            motor_cnt++;
+#endif
         }
         max8998_ldo_disable_direct(MAX8998_LDO16);
     }
@@ -186,6 +213,17 @@ IMMVIBESPIAPI VibeStatus ImmVibeSPI_ForceOut_Initialize(void)
     Immvib_pwm = pwm_request(PWM_DEVICE, "Immvibtonz");
     pwm_config(Immvib_pwm, g_PWM_duty_max/2, g_PWM_duty_max);
     ImmVibeSPI_ForceOut_AmpDisable(0);
+
+#ifdef COUNT_OF_MOTOR
+    vibe_class = class_create(THIS_MODULE, "vibe");
+    if (IS_ERR(vibe_class))
+        return PTR_ERR(vibe_class);
+
+    vibe_dev = device_create(vibe_class, NULL, 0, NULL, "vibetonz");
+
+    if (device_create_file(vibe_dev, &dev_attr_vibecnt) < 0)
+        printk("[Vibetonz] Failed to create device file(%s)!\n", dev_attr_vibecnt.attr.name);   
+#endif
 
     return VIBE_S_SUCCESS;
 }

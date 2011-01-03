@@ -200,6 +200,13 @@ struct sipc {
 #define RFS_MTU (PAGE_SIZE - SMP_CACHE_BYTES)
 #define RFS_TX_RATE 4
 
+/* set at storage device */
+unsigned int factory_test_force_sleep = 0;
+EXPORT_SYMBOL(factory_test_force_sleep);
+
+/* from mach-XX.c */
+extern unsigned int HWREV;
+
 /* TODO: move PDP related codes to other source file */
 static DEFINE_MUTEX(pdp_mutex);
 static struct net_device *pdp_devs[PDP_MAX];
@@ -435,6 +442,7 @@ static inline void _init_data(struct sipc *si, unsigned char *base)
 	si->map = (struct sipc_mapped *)base;
 	si->map->magic = 0x0;
 	si->map->access = 0x0;
+	si->map->hwrev = HWREV;
 
 	for (i=0;i<IPCIDX_MAX;i++) {
 		struct ringbuf *r = &si->rb[i];
@@ -913,8 +921,15 @@ int sipc_write(struct sipc *si, struct sk_buff_head *sbh)
 	}
 
 	r = _get_auth();
-	if (r)
-		return r;
+	if (r) {
+		if (factory_test_force_sleep){
+			printk("tx ignored for factory force sleep\n");
+			skb_queue_purge(sbh);
+			return 0;
+		} else {
+			return r;
+		}
+	}
 
 	r = mailbox = 0;
 	skb = skb_dequeue(sbh);
@@ -1752,6 +1767,11 @@ int sipc_whitelist(struct sipc *si, const char *buf, size_t count)
 	struct ringbuf *rb;
 
 	printk("[%s]\n",__func__);
+
+	if (factory_test_force_sleep) {
+		printk("[%s]factory test\n",__func__);	
+		return count;
+	}
 
 	if (!si || !buf)
 		return -EINVAL;

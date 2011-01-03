@@ -35,6 +35,22 @@
 #define ATL_Capacity		0x1F68  // 4020mAh
 #define ATL_VFCapacity		0x29E0  // 5360mAh
 
+// For low battery compensation.
+// SDI type threshold
+#define SDI_Range3_1_Threshold	3360
+#define SDI_Range3_3_Threshold	3450
+#define SDI_Range2_1_Threshold	3408
+#define SDI_Range2_3_Threshold	3463
+#define SDI_Range1_1_Threshold	3456
+#define SDI_Range1_3_Threshold	3530
+// ATL type threshold
+#define ATL_Range3_1_Threshold	3312
+#define ATL_Range3_3_Threshold	3330
+#define ATL_Range2_1_Threshold	3317
+#define ATL_Range2_3_Threshold	3344
+#define ATL_Range1_1_Threshold	3370
+#define ATL_Range1_3_Threshold	3385
+
 
 typedef enum {
 	POSITIVE = 0,
@@ -538,6 +554,9 @@ int fg_reset_soc(void)
 	}
 
 	msleep(250);
+#if defined(CONFIG_TARGET_LOCALE_NTT)
+	msleep(250);
+#endif /* CONFIG_TARGET_LOCALE_NTT */
 
 	fg_write_register(0x10, Capacity);  // FullCAP
 
@@ -645,7 +664,6 @@ int fg_adjust_capacity(void)
 }
 
 
-//#ifdef CONFIG_TARGET_LOCALE_KOR
 extern int low_batt_comp_flag;
 void fg_low_batt_compensation(u32 level)
 {
@@ -679,7 +697,6 @@ void fg_low_batt_compensation(u32 level)
 	low_batt_comp_flag = 1;  // Set flag
 	
 }
-//#endif
 
 
 void fg_test_read(void)
@@ -796,7 +813,7 @@ int fg_check_status_reg(void)
 {
 	struct i2c_client *client = fg_i2c_client;
 	u8 status_data[2];
-	int ret = 1;
+	int ret = 0;
 	
 	if(!fuel_guage_init) {
 		printk("%s : fuel guage IC is not initialized!!\n", __func__);
@@ -857,12 +874,15 @@ void fg_fullcharged_compensation(void)
 {
 //	struct i2c_client *client = fg_i2c_client;
 	u16 fullcap_data;
+	u16 NewFullCap_data;
 	
 	if(!fuel_guage_init) {
 		printk("%s : fuel guage IC is not initialized!!\n", __func__);
 		return ;
 	}
 
+#ifndef CONFIG_TARGET_LOCALE_USAGSM
+	/* Full Charge compensation algoritm 091310*/
 	//1. Write RemCapREP(05h)=FullCap;
 	fullcap_data = fg_read_register(FULLCAP_REG);
 	fg_write_register(REMCAP_REP_REG, (u16)(fullcap_data));
@@ -873,6 +893,35 @@ void fg_fullcharged_compensation(void)
 
 	//3. Write RemCapAV(1Fh)=FullCap;
 	fg_write_register(REMCAP_AV_REG, (u16)(fullcap_data));
+#endif
+
+#if defined(CONFIG_TARGET_LOCALE_USAGSM)
+	/* Full Charge compensation algoritm 101310*/
+	//1. NewFullCap=RemCapREP ;
+	NewFullCap_data = fg_read_register(REMCAP_REP_REG);
+
+	//2. If abs(FullCap-NewFullCap)<0.1*FullCap
+	//3. FullCap=NewFullCap ;
+	fullcap_data = fg_read_register(FULLCAP_REG);
+	printk("%s : FullCap = 0x%04x, RemCapREP = 0x%04x \n", __func__,fullcap_data,NewFullCap_data);
+
+	if(fullcap_data>NewFullCap_data)
+	{
+		if((fullcap_data-NewFullCap_data) < (fullcap_data/10))
+		{
+			fg_write_register(FULLCAP_REG, (u16)(NewFullCap_data));
+			printk("%s : fullcap is updated to 0x%04x !!!\n", __func__,NewFullCap_data);
+		}
+	}
+	else
+	{
+		if((NewFullCap_data-fullcap_data) < (fullcap_data/10))
+		{
+			fg_write_register(FULLCAP_REG, (u16)(NewFullCap_data));
+			printk("%s : fullcap is updated to 0x%04x !!!\n", __func__,NewFullCap_data);
+		}
+	}
+#endif
 
 	//4. Write RepSOC(06h)=100%;
 	fg_write_register(SOCREP_REG, (u16)(0x64 << 8));
@@ -894,10 +943,14 @@ void fg_set_battery_type(void)
 
 	data = fg_read_register(0x18);
 
+#ifndef CONFIG_TARGET_LOCALE_USAGSM
 	if((data == SDI_VFCapacity) || (data == SDI_VFCapacity-1))
 		battery_type = SDI_BATTERY_TYPE;
 	else if((data == ATL_VFCapacity) || (data == ATL_VFCapacity-1))
 		battery_type = ATL_BATTERY_TYPE;
+#else
+		battery_type = SDI_BATTERY_TYPE;
+#endif
 
 	if(battery_type == SDI_BATTERY_TYPE)
 		sprintf(type_str, "SDI");
