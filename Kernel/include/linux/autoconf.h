@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
  * Linux kernel version: 2.6.32.9
- * Thu Jan  6 02:27:30 2011
+ * Fri Jan 21 01:58:58 2011
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_MMC_SDHCI_S3C_DMA 1
@@ -692,7 +692,7 @@
 #define CONFIG_SND_ARIES_SOC_WM8994 1
 #define CONFIG_VIDEO_V4L1 1
 #define CONFIG_MMC 1
-#define CONFIG_INITRAMFS_SOURCE "/mnt/safe/root/tab/cyanogenmod/r/initramfs/galaxytab"
+#define CONFIG_INITRAMFS_SOURCE "/cm7sgs/initramfs/galaxytab"
 #define CONFIG_IKCONFIG_PROC 1
 #define CONFIG_VIDEO_V4L2 1
 #define CONFIG_S3C_DEV_HSMMC 1
