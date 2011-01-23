@@ -130,4 +130,4 @@ obj-$(CONFIG_PVR_PDUMP) += dbgdrv
 
 obj-$(CONFIG_PVR_SGX) += pvrsrvkm.o
 
-obj-$(CONFIG_ARCH_S5PV210) += s3c_lcd.o
+obj-m += s3c_lcd.o

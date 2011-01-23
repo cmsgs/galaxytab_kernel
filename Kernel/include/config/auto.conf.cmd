@@ -227,6 +227,7 @@ deps_config := \
 	drivers/video/omap/Kconfig \
 	drivers/video/geode/Kconfig \
 	drivers/video/samsung/Kconfig \
+	drivers/gpu/pvr/Kconfig \
 	drivers/gpu/drm/Kconfig \
 	drivers/gpu/vga/Kconfig \
 	drivers/char/agp/Kconfig \

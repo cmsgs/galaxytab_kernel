@@ -95,6 +95,7 @@ IMG_UINT32   PVRSRV_BridgeDispatchKM( IMG_UINT32  Ioctl,
 									IMG_UINT32  OutBufLen,
 									IMG_UINT32 *pdwBytesTransferred);
 
+#if 0
 #if defined(SLSI_S5PC110)
 static struct clk		*g3d_clock;
 static struct regulator		*g3d_pd_regulator;
@@ -113,6 +114,7 @@ static PVRSRV_ERROR DisableSGXClocks(void)
 
 	return PVRSRV_OK;
 }
+#endif
 #endif
 #endif
 
@@ -177,6 +179,7 @@ PVRSRV_ERROR SysInitialise()
 	OSMemSet(gpsSysData, 0, sizeof(SYS_DATA));
 
 	pdev = gpsPVRLDMDev;
+#if 0
 	g3d_pd_regulator = regulator_get(&pdev->dev, "pd");
 	if (IS_ERR(g3d_pd_regulator)) {
 		printk("\nG3D failed to find g3d power domain\n");
@@ -190,7 +193,7 @@ PVRSRV_ERROR SysInitialise()
 	}
 
 	EnableSGXClocks();
-
+#endif
 	eError = OSInitEnvData(&gpsSysData->pvEnvSpecificData);
 	if (eError != PVRSRV_OK)
 	{
